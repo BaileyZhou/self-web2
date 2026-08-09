@@ -1,0 +1,11 @@
+# 依赖包
+/node_modules
+
+# Next.js构建输出缓存
+.next
+
+# vscode本地编辑器配置
+/.vscode
+
+# 自动生成的ts类型文件
+next-env.d.ts
