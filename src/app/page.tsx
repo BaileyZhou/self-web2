@@ -4,6 +4,7 @@ import About from '@/components/sections/About'
 import Projects from '@/components/sections/Projects'
 import Experience from '@/components/sections/Experience'
 import Papers from '@/components/sections/Papers'
+import CodeExamples from '@/components/sections/CodeExamples'
 
 export default function Home() {
   return (
@@ -13,6 +14,7 @@ export default function Home() {
       <Projects />
       <Experience />
       <Papers />
+      <CodeExamples />
     </>
   )
 }

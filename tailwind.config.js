@@ -51,6 +51,14 @@ module.exports = {
       animation: {
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'bounce-slow': 'bounce 2s ease-in-out infinite',
+        'float': 'float 9s ease-in-out infinite',
+        'float-delayed': 'float 11s ease-in-out 2s infinite reverse',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '50%': { transform: 'translate(18px, -22px)' },
+        },
       },
     },
   },

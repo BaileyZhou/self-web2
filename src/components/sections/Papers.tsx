@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import Section from '@/components/ui/Section'
 import Card from '@/components/ui/Card'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { papers } from '@/lib/data'
@@ -14,12 +15,13 @@ export default function Papers() {
     : papers.items.slice(0, papers.visibleCount)
 
   return (
-    <section id="papers" className="section-padding bg-white/30 backdrop-blur-sm border-y border-white/40">
+    <Section id="papers" variant="rose" className="section-padding">
       <div className="container-custom">
         <SectionHeader
           title={papers.title}
           subtitle={papers.subtitle}
           badge={papers.badge}
+          index="04"
         />
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
@@ -60,6 +62,6 @@ export default function Papers() {
           </div>
         )}
       </div>
-    </section>
+    </Section>
   )
 }

@@ -16,6 +16,10 @@
   * {
     border-color: hsl(var(--border));
   }
+  html {
+    /* 锚点跳转时，让固定导航栏上方的区域留出空间，避免遮挡标题 */
+    scroll-padding-top: 5rem;
+  }
   body {
     @apply bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/40;
     font-feature-settings: "rlig" 1, "calt" 1;

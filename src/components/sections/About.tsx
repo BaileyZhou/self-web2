@@ -1,16 +1,19 @@
 // src/components/sections/About.tsx
+import Section from '@/components/ui/Section'
 import Card from '@/components/ui/Card'
 import SectionHeader from '@/components/ui/SectionHeader'
+import { Download } from 'lucide-react'
 import { about } from '@/lib/data'
 
 export default function About() {
   return (
-    <section id="about" className="section-padding">
+    <Section id="about" variant="indigo" className="section-padding">
       <div className="container-custom">
         <SectionHeader
           title={about.title}
           subtitle={about.subtitle}
           badge={about.badge}
+          index="01"
         />
 
         <div className="grid md:grid-cols-3 gap-6 mt-8">
@@ -27,6 +30,19 @@ export default function About() {
                 </span>
               ))}
             </div>
+            {/* 简历下载按钮：与站点风格一致的渐变圆角按钮，点击自动下载 PDF */}
+            {about.resume?.file && (
+              <div className="mt-6">
+                <a
+                  href={about.resume.file}
+                  download
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:-translate-y-0.5 transition-all"
+                >
+                  <Download size={16} />
+                  {about.resume.label}
+                </a>
+              </div>
+            )}
           </Card>
 
           <Card>
@@ -42,6 +58,6 @@ export default function About() {
           </Card>
         </div>
       </div>
-    </section>
+    </Section>
   )
 }

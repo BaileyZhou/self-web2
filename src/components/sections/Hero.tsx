@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowDown, Brain, Sparkles } from 'lucide-react'
 import { hero } from '@/lib/data'
+import { smoothScrollTo } from '@/lib/scroll'
 
 export default function Hero() {
   const textRef = useRef<HTMLDivElement>(null)
@@ -62,12 +63,20 @@ export default function Hero() {
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href={hero.primaryButton.href}
+              onClick={(e) => {
+                e.preventDefault()
+                smoothScrollTo(hero.primaryButton.href)
+              }}
               className="px-8 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all hover:-translate-y-0.5"
             >
               {hero.primaryButton.label}
             </Link>
             <Link
               href={hero.secondaryButton.href}
+              onClick={(e) => {
+                e.preventDefault()
+                smoothScrollTo(hero.secondaryButton.href)
+              }}
               className="px-8 py-3 rounded-full border border-indigo-200/50 text-slate-600 hover:text-indigo-600 hover:border-indigo-400 transition-all glass-card"
             >
               {hero.secondaryButton.label}

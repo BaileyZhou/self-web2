@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import Section from '@/components/ui/Section'
 import Card from '@/components/ui/Card'
 import SectionHeader from '@/components/ui/SectionHeader'
 import { experience } from '@/lib/data'
@@ -13,12 +14,13 @@ export default function Experience() {
     : experience.items.slice(0, experience.visibleCount)
 
   return (
-    <section id="experience" className="section-padding">
+    <Section id="experience" variant="sky" className="section-padding">
       <div className="container-custom">
         <SectionHeader
           title={experience.title}
           subtitle={experience.subtitle}
           badge={experience.badge}
+          index="03"
         />
 
         <div className="space-y-6 mt-8">
@@ -60,6 +62,6 @@ export default function Experience() {
           </div>
         )}
       </div>
-    </section>
+    </Section>
   )
 }

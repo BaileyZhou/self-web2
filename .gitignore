@@ -9,3 +9,5 @@
 
 # 自动生成的ts类型文件
 next-env.d.ts
+
+out

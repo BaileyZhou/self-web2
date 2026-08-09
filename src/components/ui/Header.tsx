@@ -5,10 +5,13 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import { nav } from '@/lib/data'
+import { smoothScrollTo } from '@/lib/scroll'
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  // 当前处于视口内的区块（用于导航高亮特效）
+  const [activeSection, setActiveSection] = useState('')
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,6 +20,40 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // 滚动监听：根据滚动位置计算当前位于视口内的区块，高亮对应导航项
+  useEffect(() => {
+    const sectionIds = nav.items
+      .map((item) => item.href)
+      .filter((href) => href.startsWith('#'))
+      .map((href) => href.slice(1))
+
+    const probe = 160 // 探测线位置（导航栏下方）：区块顶部越过此线即视为“当前区块”
+    const updateActiveSection = () => {
+      let current = ''
+      for (const id of sectionIds) {
+        const el = document.getElementById(id)
+        if (!el) continue
+        if (el.getBoundingClientRect().top <= probe) {
+          current = `#${id}`
+        }
+      }
+      setActiveSection(current)
+    }
+
+    updateActiveSection()
+    window.addEventListener('scroll', updateActiveSection, { passive: true })
+    return () => window.removeEventListener('scroll', updateActiveSection)
+  }, [])
+
+  // 导航点击：锚点链接使用平滑滚动 + 更新地址栏 hash
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (!href.startsWith('#')) return // 非锚点链接（如首页）走默认跳转
+    e.preventDefault()
+    setMobileMenuOpen(false)
+    smoothScrollTo(href)
+    history.pushState(null, '', href)
+  }
 
   return (
     <header
@@ -43,10 +80,19 @@ export default function Header() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="text-sm text-slate-600 hover:text-indigo-600 transition-colors relative group"
+                onClick={(e) => handleNavClick(e, item.href)}
+                className={`text-sm transition-colors relative group ${
+                  activeSection === item.href
+                    ? 'text-indigo-600'
+                    : 'text-slate-600 hover:text-indigo-600'
+                }`}
               >
                 {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 group-hover:w-full" />
+                <span
+                  className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${
+                    activeSection === item.href ? 'w-full' : 'w-0 group-hover:w-full'
+                  }`}
+                />
               </Link>
             ))}
           </nav>
@@ -70,8 +116,12 @@ export default function Header() {
               <Link
                 key={item.label}
                 href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className="block text-slate-600 hover:text-indigo-600 transition-colors py-1"
+                onClick={(e) => handleNavClick(e, item.href)}
+                className={`block transition-colors py-1 ${
+                  activeSection === item.href
+                    ? 'text-indigo-600'
+                    : 'text-slate-600 hover:text-indigo-600'
+                }`}
               >
                 {item.label}
               </Link>
