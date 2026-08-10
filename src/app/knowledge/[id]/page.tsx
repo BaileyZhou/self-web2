@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, BookOpen, CalendarDays } from 'lucide-react'
+import Footer from '@/components/ui/Footer'
 import { experience, site } from '@/lib/data'
 
 // 静态导出：为每张知识卡片预生成静态页面
@@ -110,6 +111,7 @@ export default async function KnowledgePage({
           </div>
         </article>
       </div>
+      <Footer />
     </main>
   )
 }

@@ -8,11 +8,7 @@ import { about } from '@/lib/data'
 
 export default function About() {
   return (
-    <Section
-      id="about"
-      variant="indigo"
-      className="section-padding bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 rounded-t-[2rem] shadow-[0_-24px_70px_-20px_rgba(99,102,241,0.45)]"
-    >
+    <Section id="about" variant="indigo" className="section-padding">
       <div className="container-custom">
         <SectionHeader
           title={about.title}

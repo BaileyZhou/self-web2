@@ -154,24 +154,23 @@ export default function CardPager() {
           <div
             key={page.id}
             aria-hidden={!active}
-            className={`absolute inset-0 transition-all duration-[650ms] ease-in-out ${
-              active
-                ? 'opacity-100 translate-y-0 z-10'
-                : 'opacity-0 translate-y-3 z-0 pointer-events-none'
+            className={`absolute inset-0 transition-opacity duration-[650ms] ease-in-out ${
+              active ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
             }`}
           >
-            <div
-              ref={(el) => {
-                scrollRefs.current[i] = el
-              }}
-              className="h-full overflow-y-auto overscroll-contain"
-            >
-              <div className="min-h-full flex flex-col">
-                <div className="flex-1">
+            <div className="flex flex-col h-full">
+              {/* 卡片内容区（可滚动），页脚固定在卡片底部 */}
+              <div
+                ref={(el) => {
+                  scrollRefs.current[i] = el
+                }}
+                className="flex-1 overflow-y-auto overscroll-contain"
+              >
+                <div className="min-h-full">
                   <page.Comp />
                 </div>
-                {page.showFooter && <Footer />}
               </div>
+              {page.showFooter && <Footer />}
             </div>
           </div>
         )

@@ -59,6 +59,7 @@ module.exports = {
         'drift-slow': 'drift 9s ease-in-out infinite',
         'twinkle': 'twinkle 2.4s ease-in-out infinite',
         'wiggle': 'wiggle 3.2s ease-in-out infinite',
+        'fade-up': 'fadeUp 0.9s ease-out forwards',
       },
       keyframes: {
         float: {
@@ -68,6 +69,10 @@ module.exports = {
         drift: {
           '0%, 100%': { transform: 'translate(0, 0) rotate(0deg)', opacity: '0.9' },
           '50%': { transform: 'translate(-12px, 16px) rotate(20deg)', opacity: '0.5' },
+        },
+        fadeUp: {
+          '0%': { opacity: '0', transform: 'translateY(32px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         twinkle: {
           '0%, 100%': { opacity: '0.3' },

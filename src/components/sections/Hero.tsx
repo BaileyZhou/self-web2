@@ -1,38 +1,17 @@
 // src/components/sections/Hero.tsx
 'use client'
 
-import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowDown, Brain, Sparkles } from 'lucide-react'
 import { hero } from '@/lib/data'
 import { pager } from '@/lib/pager'
 
 export default function Hero() {
-  const textRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('opacity-100', 'translate-y-0')
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    if (textRef.current) {
-      observer.observe(textRef.current)
-    }
-
-    return () => observer.disconnect()
-  }, [])
-
   return (
     <section id="hero" className="min-h-screen flex items-center justify-center section-padding pt-24">
       <div className="container-custom">
-        <div
-          ref={textRef}
-          className="text-center opacity-0 translate-y-8 transition-all duration-1000"
+        {/* 用纯 CSS 动画淡入上浮（不依赖 IntersectionObserver，避免首屏不显现） */}
+        <div className="text-center animate-fade-up"
         >
           {/* 装饰大脑轮廓 */}
           <div className="relative inline-block mb-6">
