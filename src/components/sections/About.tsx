@@ -2,12 +2,17 @@
 import Section from '@/components/ui/Section'
 import Card from '@/components/ui/Card'
 import SectionHeader from '@/components/ui/SectionHeader'
-import { Download } from 'lucide-react'
+import AboutIllustration from '@/components/sections/AboutIllustration'
+import { Download, Sparkles } from 'lucide-react'
 import { about } from '@/lib/data'
 
 export default function About() {
   return (
-    <Section id="about" variant="indigo" className="section-padding">
+    <Section
+      id="about"
+      variant="indigo"
+      className="section-padding bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50 rounded-t-[2rem] shadow-[0_-24px_70px_-20px_rgba(99,102,241,0.45)]"
+    >
       <div className="container-custom">
         <SectionHeader
           title={about.title}
@@ -16,8 +21,8 @@ export default function About() {
           index="01"
         />
 
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
-          <Card className="md:col-span-2">
+        <div className="grid md:grid-cols-2 gap-6 mt-8 items-center">
+          <Card className="h-full">
             <h3 className="text-lg font-semibold text-slate-800 mb-3">{about.storyHeading}</h3>
             <p className="text-slate-600 leading-relaxed whitespace-pre-line">{about.story}</p>
             <div className="mt-4 flex flex-wrap gap-2">
@@ -45,17 +50,23 @@ export default function About() {
             )}
           </Card>
 
-          <Card>
-            <h3 className="text-lg font-semibold text-slate-800 mb-3">{about.valuesHeading}</h3>
-            <ul className="space-y-3 text-slate-600">
-              {about.values.map((value) => (
-                <li key={value} className="flex items-start gap-2">
-                  <span className="text-indigo-400 mt-1">✦</span>
-                  <span>{value}</span>
-                </li>
-              ))}
-            </ul>
-          </Card>
+          {/* 卡通插画：与文字形成左右对称，增加视觉层次 */}
+          <AboutIllustration />
+        </div>
+
+        {/* 核心主张：横排小卡片（比原来更轻量，突出层次感） */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {about.values.map((value) => (
+            <div
+              key={value}
+              className="glass-card rounded-xl p-4 flex items-start gap-3 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 hover:border-indigo-200/70"
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-white shadow-md shadow-indigo-500/20">
+                <Sparkles size={14} />
+              </span>
+              <p className="text-sm text-slate-600 leading-snug">{value}</p>
+            </div>
+          ))}
         </div>
       </div>
     </Section>

@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowDown, Brain, Sparkles } from 'lucide-react'
 import { hero } from '@/lib/data'
-import { smoothScrollTo } from '@/lib/scroll'
+import { pager } from '@/lib/pager'
 
 export default function Hero() {
   const textRef = useRef<HTMLDivElement>(null)
@@ -28,7 +28,7 @@ export default function Hero() {
   }, [])
 
   return (
-    <section className="min-h-screen flex items-center justify-center section-padding pt-24">
+    <section id="hero" className="min-h-screen flex items-center justify-center section-padding pt-24">
       <div className="container-custom">
         <div
           ref={textRef}
@@ -65,7 +65,7 @@ export default function Hero() {
               href={hero.primaryButton.href}
               onClick={(e) => {
                 e.preventDefault()
-                smoothScrollTo(hero.primaryButton.href)
+                pager.goTo(hero.primaryButton.href.replace('#', ''))
               }}
               className="px-8 py-3 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 transition-all hover:-translate-y-0.5"
             >
@@ -75,7 +75,7 @@ export default function Hero() {
               href={hero.secondaryButton.href}
               onClick={(e) => {
                 e.preventDefault()
-                smoothScrollTo(hero.secondaryButton.href)
+                pager.goTo(hero.secondaryButton.href.replace('#', ''))
               }}
               className="px-8 py-3 rounded-full border border-indigo-200/50 text-slate-600 hover:text-indigo-600 hover:border-indigo-400 transition-all glass-card"
             >
@@ -83,8 +83,19 @@ export default function Hero() {
             </Link>
           </div>
 
-          <div className="mt-16 animate-bounce-slow">
-            <ArrowDown size={24} className="text-slate-400 mx-auto" />
+          {/* 向下箭头：点击后切到“关于我”卡片 */}
+          <div className="mt-16 flex justify-center">
+            <button
+              type="button"
+              onClick={() => pager.goTo('about')}
+              aria-label="向下滚动到关于我"
+              className="group flex h-12 w-12 items-center justify-center rounded-full border border-indigo-200/50 bg-white/60 text-slate-400 shadow-lg shadow-indigo-500/5 backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-indigo-400 hover:text-indigo-600 hover:shadow-indigo-500/20 cursor-pointer"
+            >
+              <ArrowDown
+                size={20}
+                className="animate-bounce-slow group-hover:scale-110 transition-transform"
+              />
+            </button>
           </div>
         </div>
       </div>

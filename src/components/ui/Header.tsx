@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Menu, X } from 'lucide-react'
 import { nav } from '@/lib/data'
 import { smoothScrollTo } from '@/lib/scroll'
+import { pager } from '@/lib/pager'
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -21,7 +22,15 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  // 滚动监听：根据滚动位置计算当前位于视口内的区块，高亮对应导航项
+  // 翻页模式（首页卡片）：高亮跟随 pager 当前卡片
+  useEffect(() => {
+    return pager.subscribe((id) => {
+      setActiveSection(`#${id}`)
+      setIsScrolled(id !== 'hero')
+    })
+  }, [])
+
+  // 非翻页模式（如知识库详情页）：根据滚动位置高亮导航项
   useEffect(() => {
     const sectionIds = nav.items
       .map((item) => item.href)
@@ -30,6 +39,7 @@ export default function Header() {
 
     const probe = 160 // 探测线位置（导航栏下方）：区块顶部越过此线即视为“当前区块”
     const updateActiveSection = () => {
+      if (pager.isActive()) return // 翻页模式下由 pager 驱动
       let current = ''
       for (const id of sectionIds) {
         const el = document.getElementById(id)
@@ -41,18 +51,30 @@ export default function Header() {
       setActiveSection(current)
     }
 
-    updateActiveSection()
     window.addEventListener('scroll', updateActiveSection, { passive: true })
     return () => window.removeEventListener('scroll', updateActiveSection)
   }, [])
 
-  // 导航点击：锚点链接使用平滑滚动 + 更新地址栏 hash
+  // 导航点击：翻页模式下切到对应卡片；非翻页模式（知识库详情页）走平滑滚动
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    if (!href.startsWith('#')) return // 非锚点链接（如首页）走默认跳转
+    // 首页链接：翻页模式下回到第一张卡片
+    if (href === '/') {
+      if (pager.isActive()) {
+        e.preventDefault()
+        setMobileMenuOpen(false)
+        pager.goTo('hero')
+      }
+      return
+    }
+    if (!href.startsWith('#')) return // 非锚点链接走默认跳转
     e.preventDefault()
     setMobileMenuOpen(false)
-    smoothScrollTo(href)
-    history.pushState(null, '', href)
+    if (pager.isActive()) {
+      pager.goTo(href.slice(1))
+    } else {
+      smoothScrollTo(href)
+      history.pushState(null, '', href)
+    }
   }
 
   return (

@@ -5,6 +5,7 @@ import './globals.css'
 import Header from '@/components/ui/Header'
 import Footer from '@/components/ui/Footer'
 import NeuronBackground from '@/components/ui/NeuronBackground'
+import ScrollProgress from '@/components/ui/ScrollProgress'
 import { siteContent } from '@/lib/data'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
@@ -31,6 +32,8 @@ export default function RootLayout({
     <html lang={siteContent.site.language} className={inter.variable}>
       <body className="bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/40 min-h-screen antialiased">
         <Header />
+        {/* 右侧滚动进度条 */}
+        <ScrollProgress />
         <main className="relative z-10">{children}</main>
         <Footer />
         {/* 背景装饰 */}
