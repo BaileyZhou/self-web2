@@ -15,10 +15,12 @@ import Footer from '@/components/ui/Footer'
 import { pager } from '@/lib/pager'
 import type { KnowledgeItem } from '@/lib/knowledge-types'
 
-/** 卡片切换过渡：进入卡片淡入时长（毫秒） */
-const TRANSITION_MS = 420
-/** 离开卡片快速淡出时长（毫秒）：让前一页文字尽快清空，切换更流畅 */
-const LEAVE_MS = 220
+/** 旧卡片完全淡出时长（毫秒）：淡出完成后再让新卡片淡入，杜绝两页混叠 */
+const FADE_OUT_MS = 320
+/** 新卡片淡入时长（毫秒） */
+const FADE_IN_MS = 420
+/** 总过渡时长（busyRef 输入锁）：旧页淡出 + 新页淡入 */
+const TRANSITION_MS = FADE_OUT_MS + FADE_IN_MS
 
 export default function CardPager({
   experienceItems = [],
@@ -26,8 +28,10 @@ export default function CardPager({
   experienceItems?: KnowledgeItem[]
 }) {
   const [current, setCurrent] = useState(0)
-  // 正在淡出的旧卡片索引（用于快速淡出，避免前一页文字停留过久）
+  // 正在淡出的旧卡片索引
   const [leaving, setLeaving] = useState<number | null>(null)
+  // 过渡阶段：'out' = 旧页淡出（新页隐藏等待）；'in' = 新页淡入（旧页已消失）；null = 空闲
+  const [phase, setPhase] = useState<'out' | 'in' | null>(null)
   // 已挂载的卡片索引：首屏只挂载 hero，其余卡片首次进入时再按需挂载，
   // 显著缩短首屏 DOM/hydration 时间，避免首载期间页面不可交互。
   const [mounted, setMounted] = useState<number[]>([0])
@@ -56,7 +60,8 @@ export default function CardPager({
     if (index < 0 || index >= PAGES.length) return
 
     busyRef.current = true
-    setLeaving(currentRef.current) // 标记即将离开的旧卡片，让其快速淡出
+    setLeaving(currentRef.current) // 标记旧卡片，开始淡出
+    setPhase('out') // 淡出阶段：新卡片保持隐藏，等待旧页完全消失
     currentRef.current = index
     setCurrent(index)
     // 首次进入某张卡片时按需挂载（先挂载再淡入，避免一直渲染全部 6 张卡片）
@@ -65,9 +70,13 @@ export default function CardPager({
     // 新卡片内容回到顶部
     const el = scrollRefs.current[index]
     if (el) el.scrollTop = 0
+    // 旧卡片淡出完成后 → 新卡片开始淡入
+    window.setTimeout(() => setPhase('in'), FADE_OUT_MS)
+    // 整体过渡结束 → 解锁并复位
     window.setTimeout(() => {
       busyRef.current = false
-      setLeaving(null) // 过渡结束，清除离开标记
+      setLeaving(null)
+      setPhase(null)
     }, TRANSITION_MS)
   }, [PAGES])
 
@@ -184,21 +193,24 @@ export default function CardPager({
       {PAGES.map((page, i) => {
         // 按需挂载：未访问过的卡片不渲染，缩短首屏 hydration、提高首载可交互性
         if (!mounted.includes(i)) return null
-        const active = i === current
-        // 离开的旧卡片快速淡出（前一页文字尽快清空）；进入/其他卡片正常淡入淡出
         const isLeaving = i === leaving && i !== current
+        const isCurrent = i === current
+        // 当前卡片：淡入阶段（'in'）或空闲（null）时可见；淡出阶段（'out'）隐藏等待
+        const currentVisible = isCurrent && (phase === 'in' || phase === null)
+        let cls = 'absolute inset-0 transition-opacity ease-out'
+        if (isLeaving) {
+          // 旧卡片：完全淡出（结束后新卡片才开始淡入，杜绝两页混叠）
+          cls += ' duration-[320ms] opacity-0 z-0 pointer-events-none'
+        } else if (isCurrent) {
+          // 新卡片：淡入阶段才显示，其余时间隐藏（等待旧页淡出完成）
+          cls += ` duration-[420ms] ${
+            currentVisible ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+          }`
+        } else {
+          cls += ' opacity-0 z-0 pointer-events-none pager-card-hidden'
+        }
         return (
-          <div
-            key={page.id}
-            aria-hidden={!active}
-            className={`absolute inset-0 transition-opacity ease-out ${
-              isLeaving ? 'duration-[220ms]' : 'duration-[380ms]'
-            } ${
-              active
-                ? 'opacity-100 z-10'
-                : 'opacity-0 z-0 pointer-events-none pager-card-hidden'
-            }`}
-          >
+          <div key={page.id} aria-hidden={!currentVisible} className={cls}>
             <div className="flex flex-col h-full">
               {/* 卡片内容区（可滚动），页脚固定在卡片底部 */}
               <div
