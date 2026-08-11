@@ -4,7 +4,7 @@
 // 每张内容卡片底部渲染页脚；各卡片内部组件（查看更多等交互）保持不变。
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Hero from '@/components/sections/Hero'
 import About from '@/components/sections/About'
 import Projects from '@/components/sections/Projects'
@@ -13,42 +13,63 @@ import Papers from '@/components/sections/Papers'
 import CodeExamples from '@/components/sections/CodeExamples'
 import Footer from '@/components/ui/Footer'
 import { pager } from '@/lib/pager'
+import type { KnowledgeItem } from '@/lib/knowledge-types'
 
-// 卡片列表：id 需与 PAGER_PAGE_IDS 保持一致；首页不带页脚，内容卡片带页脚
-const PAGES = [
-  { id: 'hero', Comp: Hero, showFooter: false },
-  { id: 'about', Comp: About, showFooter: true },
-  { id: 'projects', Comp: Projects, showFooter: true },
-  { id: 'experience', Comp: Experience, showFooter: true },
-  { id: 'papers', Comp: Papers, showFooter: true },
-  { id: 'code-examples', Comp: CodeExamples, showFooter: true },
-] as const
+/** 卡片切换过渡：进入卡片淡入时长（毫秒） */
+const TRANSITION_MS = 420
+/** 离开卡片快速淡出时长（毫秒）：让前一页文字尽快清空，切换更流畅 */
+const LEAVE_MS = 220
 
-/** 卡片切换过渡时长（毫秒） */
-const TRANSITION_MS = 650
-
-export default function CardPager() {
+export default function CardPager({
+  experienceItems = [],
+}: {
+  experienceItems?: KnowledgeItem[]
+}) {
   const [current, setCurrent] = useState(0)
+  // 正在淡出的旧卡片索引（用于快速淡出，避免前一页文字停留过久）
+  const [leaving, setLeaving] = useState<number | null>(null)
+  // 已挂载的卡片索引：首屏只挂载 hero，其余卡片首次进入时再按需挂载，
+  // 显著缩短首屏 DOM/hydration 时间，避免首载期间页面不可交互。
+  const [mounted, setMounted] = useState<number[]>([0])
   const scrollRefs = useRef<(HTMLDivElement | null)[]>([])
   const currentRef = useRef(0)
   const busyRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // 卡片列表：id 需与 PAGER_PAGE_IDS 保持一致；首页不带页脚，内容卡片带页脚。
+  // experienceItems 由服务端首页读取后传入（首页知识库展示最新 N 条），仅在变化时重建。
+  const PAGES = useMemo(
+    () =>
+      [
+        { id: 'hero', Comp: Hero, showFooter: false },
+        { id: 'about', Comp: About, showFooter: true },
+        { id: 'projects', Comp: Projects, showFooter: true },
+        { id: 'experience', Comp: Experience, showFooter: true, items: experienceItems },
+        { id: 'papers', Comp: Papers, showFooter: true },
+        { id: 'code-examples', Comp: CodeExamples, showFooter: true },
+      ] as const,
+    [experienceItems]
+  )
 
   const goTo = useCallback((index: number) => {
     if (busyRef.current || index === currentRef.current) return
     if (index < 0 || index >= PAGES.length) return
 
     busyRef.current = true
+    setLeaving(currentRef.current) // 标记即将离开的旧卡片，让其快速淡出
     currentRef.current = index
     setCurrent(index)
+    // 首次进入某张卡片时按需挂载（先挂载再淡入，避免一直渲染全部 6 张卡片）
+    setMounted((prev) => (prev.includes(index) ? prev : [...prev, index]))
     pager.setCurrentId(PAGES[index].id)
     // 新卡片内容回到顶部
     const el = scrollRefs.current[index]
     if (el) el.scrollTop = 0
     window.setTimeout(() => {
       busyRef.current = false
+      setLeaving(null) // 过渡结束，清除离开标记
     }, TRANSITION_MS)
-  }, [])
+  }, [PAGES])
 
   // 挂载：锁定页面滚动、注册到全局 pager、处理初始 hash（如 /#experience）
   useEffect(() => {
@@ -62,12 +83,24 @@ export default function CardPager() {
       if (idx >= 0) goTo(idx)
     })
 
-    const hash = window.location.hash.replace('#', '')
-    const idx = PAGES.findIndex((p) => p.id === hash)
-    if (idx > 0) goTo(idx)
+    // 处理地址栏 hash：深链接（/#about 等）、冷加载时 hash 延迟设置、以及浏览器前进/后退
+    const goToHash = () => {
+      const hash = window.location.hash.replace('#', '')
+      const idx = PAGES.findIndex((p) => p.id === hash)
+      if (idx > 0) {
+        goTo(idx)
+      } else if (!hash) {
+        // 无深链接时以首页为基线：清除上次会话残留的 currentId，
+        // 避免从其它页面返回时导航高亮（如“知识库”）与可见卡片（首页）失步。
+        pager.resetToHero()
+      }
+    }
+    goToHash()
+    window.addEventListener('hashchange', goToHash)
 
     return () => {
       pager.unregister()
+      window.removeEventListener('hashchange', goToHash)
       document.body.style.overflow = prevBody
       document.documentElement.style.overflow = prevHtml
     }
@@ -149,13 +182,21 @@ export default function CardPager() {
   return (
     <div ref={containerRef} className="relative h-screen overflow-hidden">
       {PAGES.map((page, i) => {
+        // 按需挂载：未访问过的卡片不渲染，缩短首屏 hydration、提高首载可交互性
+        if (!mounted.includes(i)) return null
         const active = i === current
+        // 离开的旧卡片快速淡出（前一页文字尽快清空）；进入/其他卡片正常淡入淡出
+        const isLeaving = i === leaving && i !== current
         return (
           <div
             key={page.id}
             aria-hidden={!active}
-            className={`absolute inset-0 transition-opacity duration-[650ms] ease-in-out ${
-              active ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+            className={`absolute inset-0 transition-opacity ease-out ${
+              isLeaving ? 'duration-[220ms]' : 'duration-[380ms]'
+            } ${
+              active
+                ? 'opacity-100 z-10'
+                : 'opacity-0 z-0 pointer-events-none pager-card-hidden'
             }`}
           >
             <div className="flex flex-col h-full">
@@ -167,7 +208,11 @@ export default function CardPager() {
                 className="flex-1 overflow-y-auto overscroll-contain"
               >
                 <div className="min-h-full">
-                  <page.Comp />
+                  {page.id === 'experience' ? (
+                    <page.Comp items={page.items} />
+                  ) : (
+                    <page.Comp />
+                  )}
                 </div>
               </div>
               {page.showFooter && <Footer />}

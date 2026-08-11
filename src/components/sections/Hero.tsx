@@ -8,20 +8,23 @@ import { pager } from '@/lib/pager'
 
 export default function Hero() {
   return (
-    <section id="hero" className="min-h-screen flex items-center justify-center section-padding pt-24">
+    <section
+      id="hero"
+      className="h-full flex flex-col items-center justify-center px-4 pt-20 pb-6"
+    >
       <div className="container-custom">
         {/* 用纯 CSS 动画淡入上浮（不依赖 IntersectionObserver，避免首屏不显现） */}
         <div className="text-center animate-fade-up"
         >
           {/* 装饰大脑轮廓 */}
-          <div className="relative inline-block mb-6">
+          <div className="relative inline-block mb-5">
             <div className="absolute inset-0 blur-2xl bg-indigo-300/20 rounded-full animate-pulse-slow" />
             <div className="relative w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center border border-indigo-200/30">
               <Brain size={36} className="text-indigo-500" />
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="flex items-center justify-center gap-2 mb-3">
             <Sparkles size={16} className="text-indigo-400" />
             <span className="text-sm font-medium text-indigo-500">{hero.badge}</span>
             <Sparkles size={16} className="text-purple-400" />
@@ -33,13 +36,13 @@ export default function Hero() {
             <span className="gradient-text">{hero.titleHighlight}</span>
           </h1>
 
-          <p className="mt-6 text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-4 text-lg md:text-xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
             {hero.subtitleLine1}
             <br />
             {hero.subtitleLine2}
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href={hero.primaryButton.href}
               onClick={(e) => {
@@ -63,7 +66,7 @@ export default function Hero() {
           </div>
 
           {/* 向下箭头：点击后切到“关于我”卡片 */}
-          <div className="mt-16 flex justify-center">
+          <div className="mt-10 flex justify-center">
             <button
               type="button"
               onClick={() => pager.goTo('about')}

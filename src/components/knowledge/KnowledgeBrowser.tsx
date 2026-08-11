@@ -1,0 +1,209 @@
+// src/components/knowledge/KnowledgeBrowser.tsx
+// 知识库列表页交互（客户端组件）：关键字检索、分类筛选与分页（每页 20 条）。
+// 数据由服务端页面 /knowledge 读取后通过 props 传入（src/lib/knowledge.ts 只能在服务端使用）。
+'use client'
+
+import { useMemo, useState } from 'react'
+import { Brain, Search, SearchX } from 'lucide-react'
+import KnowledgeCard from '@/components/sections/KnowledgeCard'
+import Footer from '@/components/ui/Footer'
+import type { KnowledgeItem } from '@/lib/knowledge-types'
+
+/** 每页最多展示条数 */
+const PER_PAGE = 20
+/** 卡片底部“进入详情页”链接的文字（与首页知识库卡片保持一致） */
+const DETAIL_LABEL = '阅读笔记 →'
+
+export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) {
+  const [query, setQuery] = useState('')
+  const [category, setCategory] = useState('全部')
+  const [page, setPage] = useState(1)
+
+  // 全部分类（保持出现顺序，用于筛选）
+  const categories = useMemo(
+    () => ['全部', ...Array.from(new Set(items.map((i) => i.category)))],
+    [items]
+  )
+
+  // 关键字 + 分类过滤
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return items.filter((item) => {
+      if (category !== '全部' && item.category !== category) return false
+      if (!q) return true
+      const haystack = [item.title, item.summary, item.category, (item.tags || []).join(' ')]
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [items, query, category])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
+  const safePage = Math.min(page, totalPages)
+  const currentItems = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE)
+
+  const goPage = (p: number) => {
+    const next = Math.max(1, Math.min(p, totalPages))
+    setPage(next)
+    // 翻页后回到顶部
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  return (
+    <>
+      {/* 内容区 flex-1，页脚固定在页面最下方 */}
+      <div className="section-padding pt-24 pb-16 flex-1">
+        <div className="container-custom max-w-6xl">
+          {/* ═══ 头部：检索栏（产品经理 × 神经科学设计） ═══ */}
+          <div className="glass-card rounded-2xl p-6 md:p-10 relative overflow-hidden text-center">
+            {/* 背景装饰：柔光 + 脑波线 */}
+            <div aria-hidden className="absolute inset-0 pointer-events-none">
+              <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full bg-sky-200/30 blur-3xl" />
+              <div className="absolute -bottom-16 -left-10 w-64 h-64 rounded-full bg-indigo-200/30 blur-3xl" />
+              <svg
+                viewBox="0 0 800 80"
+                className="absolute bottom-2 left-0 w-full opacity-20"
+                preserveAspectRatio="none"
+              >
+                <path
+                  d="M 0 40 Q 50 10 100 40 T 200 40 T 300 40 T 400 40 T 500 40 T 600 40 T 700 40 T 800 40"
+                  fill="none"
+                  stroke="#0ea5e9"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+
+            <div className="relative">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white shadow-lg shadow-sky-500/25">
+                <Brain size={26} />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-semibold text-slate-800">
+                知识<span className="gradient-text">库</span>
+              </h1>
+              <p className="mt-2 text-slate-500 max-w-xl mx-auto">
+                以产品经理与神经科学研究者的双重视角，沉淀每一份认知
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                共 {filtered.length} 条笔记 · 每页最多 {PER_PAGE} 条 · 按时间倒序
+              </p>
+
+              {/* 检索栏 */}
+              <div className="mt-6 flex items-center gap-2 max-w-xl mx-auto">
+                <div className="relative flex-1">
+                  <Search
+                    size={16}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    value={query}
+                    onChange={(e) => {
+                      setQuery(e.target.value)
+                      setPage(1)
+                    }}
+                    placeholder="请输入关键字检索知识笔记…"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-full border border-sky-200/60 bg-white/80 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40 focus:border-sky-400 transition-all"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPage(1)}
+                  className="px-6 py-2.5 rounded-full bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium shadow-lg shadow-sky-500/25 hover:shadow-sky-500/40 hover:-translate-y-0.5 transition-all"
+                >
+                  搜索
+                </button>
+              </div>
+
+              {/* 分类筛选 */}
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {categories.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => {
+                      setCategory(c)
+                      setPage(1)
+                    }}
+                    className={`px-3 py-1 text-xs rounded-full border transition-all ${
+                      category === c
+                        ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white border-transparent shadow-md shadow-sky-500/20'
+                        : 'text-slate-600 border-slate-200 bg-white/70 hover:border-sky-300 hover:text-sky-600'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ═══ 卡片网格（与首页同款式样） ═══ */}
+          {currentItems.length > 0 ? (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+              {currentItems.map((item) => (
+                <KnowledgeCard key={item.id} item={item} detailLabel={DETAIL_LABEL} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center mt-16 text-slate-400">
+              <SearchX size={40} className="mx-auto mb-3" />
+              <p>没有找到匹配的知识笔记，换个关键字试试？</p>
+            </div>
+          )}
+
+          {/* ═══ 分页（每页最多 20 条） ═══ */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-12">
+              <button
+                type="button"
+                onClick={() => goPage(safePage - 1)}
+                disabled={safePage <= 1}
+                className="px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:text-sky-600 hover:border-sky-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                上一页
+              </button>
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
+                .reduce<number[]>((acc, p) => {
+                  if (acc.length && p - acc[acc.length - 1] > 1) acc.push(-1) // 省略号占位
+                  acc.push(p)
+                  return acc
+                }, [])
+                .map((p, idx) =>
+                  p === -1 ? (
+                    <span key={`gap-${idx}`} className="px-1 text-slate-400">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => goPage(p)}
+                      className={`h-9 w-9 rounded-full text-sm transition-all ${
+                        p === safePage
+                          ? 'bg-gradient-to-br from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-500/25'
+                          : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                )}
+
+              <button
+                type="button"
+                onClick={() => goPage(safePage + 1)}
+                disabled={safePage >= totalPages}
+                className="px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:text-sky-600 hover:border-sky-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                下一页
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      <Footer />
+    </>
+  )
+}

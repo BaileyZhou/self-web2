@@ -3,12 +3,13 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
 import { nav } from '@/lib/data'
-import { smoothScrollTo } from '@/lib/scroll'
 import { pager } from '@/lib/pager'
 
 export default function Header() {
+  const router = useRouter()
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   // 当前处于视口内的区块（用于导航高亮特效）
@@ -55,9 +56,10 @@ export default function Header() {
     return () => window.removeEventListener('scroll', updateActiveSection)
   }, [])
 
-  // 导航点击：翻页模式下切到对应卡片；非翻页模式（知识库详情页）走平滑滚动
+  // 导航点击：翻页模式下切到对应卡片；
+  // 非翻页模式（如知识库列表/详情页）：区块导航没有本地锚点，跳回首页并定位到对应卡片（/#about 等）
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    // 首页链接：翻页模式下回到第一张卡片
+    // 首页链接：翻页模式下回到第一张卡片；非翻页模式走默认跳转回首页
     if (href === '/') {
       if (pager.isActive()) {
         e.preventDefault()
@@ -70,12 +72,17 @@ export default function Header() {
     e.preventDefault()
     setMobileMenuOpen(false)
     if (pager.isActive()) {
+      // 首页翻页模式：切到对应卡片
       pager.goTo(href.slice(1))
     } else {
-      smoothScrollTo(href)
-      history.pushState(null, '', href)
+      // 非首页（如知识库页）：跳回首页并定位到对应卡片；首页 CardPager 挂载时会读取 hash 自动定位
+      router.push(`/${href}`)
     }
   }
+
+  // 判断导航项是否高亮：区块锚点直接匹配；首页 Hero 卡片（'#hero'）对应“首页”链接（'/'）
+  const isNavActive = (href: string) =>
+    activeSection === href || (activeSection === '#hero' && href === '/')
 
   return (
     <header
@@ -104,7 +111,7 @@ export default function Header() {
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item.href)}
                 className={`text-sm transition-colors relative group ${
-                  activeSection === item.href
+                  isNavActive(item.href)
                     ? 'text-indigo-600'
                     : 'text-slate-600 hover:text-indigo-600'
                 }`}
@@ -112,7 +119,7 @@ export default function Header() {
                 {item.label}
                 <span
                   className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300 ${
-                    activeSection === item.href ? 'w-full' : 'w-0 group-hover:w-full'
+                    isNavActive(item.href) ? 'w-full' : 'w-0 group-hover:w-full'
                   }`}
                 />
               </Link>
@@ -140,7 +147,7 @@ export default function Header() {
                 href={item.href}
                 onClick={(e) => handleNavClick(e, item.href)}
                 className={`block transition-colors py-1 ${
-                  activeSection === item.href
+                  isNavActive(item.href)
                     ? 'text-indigo-600'
                     : 'text-slate-600 hover:text-indigo-600'
                 }`}

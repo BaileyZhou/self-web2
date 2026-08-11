@@ -30,6 +30,12 @@ export const pager = {
   unregister() {
     goToFn = null
   },
+  /** 仅将 currentId 重置为首页并通知订阅者（不改地址栏 hash）。
+   *  用于 CardPager 挂载时清除上次会话残留的 currentId，避免导航高亮与可见卡片失步。 */
+  resetToHero() {
+    currentId = 'hero'
+    listeners.forEach((l) => l(currentId))
+  },
   isActive() {
     return !!goToFn
   },
