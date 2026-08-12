@@ -3,7 +3,7 @@
 
 import { useEffect, useRef } from 'react'
 
-export default function NeuronBackground() {
+export default function NeuronBackground({ rgb = '99,102,241' }: { rgb?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function NeuronBackground() {
         if (!ctx) return
         ctx.beginPath()
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2)
-        ctx.fillStyle = 'rgba(99, 102, 241, 0.15)'
+        ctx.fillStyle = `rgba(${rgb}, 0.15)`
         ctx.fill()
       }
     }
@@ -79,7 +79,7 @@ export default function NeuronBackground() {
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
             const alpha = 0.08 * (1 - dist / 150)
-            ctx.strokeStyle = `rgba(99, 102, 241, ${alpha})`
+            ctx.strokeStyle = `rgba(${rgb}, ${alpha})`
             ctx.lineWidth = 0.8
             ctx.stroke()
           }
@@ -107,7 +107,7 @@ export default function NeuronBackground() {
       window.removeEventListener('resize', resize)
       cancelAnimationFrame(animationId)
     }
-  }, [])
+  }, [rgb])
 
   return <canvas ref={canvasRef} className="w-full h-full opacity-40" />
 }

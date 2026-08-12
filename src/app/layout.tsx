@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/ui/Header'
-import NeuronBackground from '@/components/ui/NeuronBackground'
+import DailyThemeBackground from '@/components/ui/DailyThemeBackground'
 import ScrollProgress from '@/components/ui/ScrollProgress'
 import { siteContent } from '@/lib/data'
 
@@ -34,10 +34,8 @@ export default function RootLayout({
         {/* 右侧滚动进度条 */}
         <ScrollProgress />
         <main className="relative z-10">{children}</main>
-        {/* 背景装饰 */}
-        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-          <NeuronBackground />
-        </div>
+        {/* 背景装饰：每日主题背景（整体背景随日期轮换风格） */}
+        <DailyThemeBackground />
       </body>
     </html>
   )
