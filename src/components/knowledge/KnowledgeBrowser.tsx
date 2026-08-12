@@ -137,11 +137,17 @@ export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) 
             </div>
           </div>
 
-          {/* ═══ 卡片网格（与首页同款式样） ═══ */}
+          {/* ═══ 卡片网格（与首页同款式样）；key 含页码，翻页时重新触发入场动画 ═══ */}
           {currentItems.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-              {currentItems.map((item) => (
-                <KnowledgeCard key={item.id} item={item} detailLabel={DETAIL_LABEL} />
+            <div key={safePage} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+              {currentItems.map((item, i) => (
+                <div
+                  key={item.id}
+                  className="stagger-in"
+                  style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
+                >
+                  <KnowledgeCard item={item} detailLabel={DETAIL_LABEL} />
+                </div>
               ))}
             </div>
           ) : (

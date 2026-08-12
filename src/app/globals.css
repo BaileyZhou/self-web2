@@ -44,6 +44,22 @@
     animation-play-state: paused !important;
   }
 
+  /* 列表内容入场动画：卡片错落淡入上浮（配合内联 animation-delay 逐张错开），
+     与站点现有的 fadeUp 上浮淡入风格一致，用于文库/列表页内容出现时的过渡。 */
+  @keyframes staggerIn {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .stagger-in {
+    animation: staggerIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
   .section-padding {
     @apply py-16 md:py-24;
   }

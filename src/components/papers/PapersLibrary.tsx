@@ -237,7 +237,7 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
             <h1 className="text-3xl md:text-4xl font-semibold text-slate-800">
               我的<span className="gradient-text">文库</span>
             </h1>
-            <p className="mt-2 text-slate-500">规范管理文献，传递真实信息。</p>
+            <p className="mt-2 text-slate-500">终身学习，持续成长。</p>
           </div>
 
           <div className="grid lg:grid-cols-[240px_minmax(0,1fr)_320px] gap-6">
@@ -435,14 +435,15 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
                     <p className="text-slate-600 font-medium">无匹配的文献，请更换检索词。</p>
                   </div>
                 ) : view === 'standard' ? (
-                  /* 标准视图：卡片网格 */
-                  <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {current.map((p) => (
+                  /* 标准视图：卡片网格（key 含页码，翻页重新触发入场动画） */
+                  <div key={safePage} className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {current.map((p, i) => (
                       <button
                         key={p.id}
                         type="button"
                         onClick={() => setSelectedId(p.id)}
-                        className={`text-left group h-full rounded-2xl p-5 border transition-all bg-white/70 backdrop-blur-sm shadow-sm ${
+                        style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
+                        className={`stagger-in text-left group h-full rounded-2xl p-5 border transition-all bg-white/70 backdrop-blur-sm shadow-sm ${
                           selectedId === p.id
                             ? 'border-rose-400 ring-2 ring-rose-200'
                             : 'border-white/40 hover:border-rose-300 hover:shadow-md'
@@ -470,14 +471,15 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
                     ))}
                   </div>
                 ) : (
-                  /* 紧凑视图：列表行 */
-                  <div className="glass-card rounded-2xl divide-y divide-slate-100 overflow-hidden">
-                    {current.map((p) => (
+                  /* 紧凑视图：列表行（key 含页码，翻页重新触发入场动画） */
+                  <div key={safePage} className="glass-card rounded-2xl divide-y divide-slate-100 overflow-hidden">
+                    {current.map((p, i) => (
                       <button
                         key={p.id}
                         type="button"
                         onClick={() => setSelectedId(p.id)}
-                        className={`w-full text-left flex items-center gap-4 px-5 py-3.5 transition-all hover:bg-rose-50/40 ${
+                        style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
+                        className={`stagger-in w-full text-left flex items-center gap-4 px-5 py-3.5 transition-all hover:bg-rose-50/40 ${
                           selectedId === p.id ? 'bg-rose-50/60' : ''
                         }`}
                       >

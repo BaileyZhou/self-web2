@@ -129,7 +129,7 @@ export default async function KnowledgePage({
                 <div className="text-slate-400 text-center py-16">（暂无正文）</div>
               )}
 
-              {/* 底部：产品 × 研究视角 */}
+              {/* 底部：脑科学 × 神经科学研究 */}
               <p className="mt-8 text-xs text-slate-400">
                 脑科学 × 神经科学研究 · 持续沉淀
               </p>
