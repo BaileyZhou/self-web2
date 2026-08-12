@@ -28,7 +28,7 @@ intro: 深部刺激线圈与常规线圈在作用机制上并无本质差异，�
 
 ![alt text](pic/image.png)[^ref3]
 
-## 参考文献
+# 参考文献
 [^ref1]: JOHNSON K A, BAIG M, RAMSEY D, et al. Prefrontal rTMS for treating depression: Location and intensity results from the OPT-TMS multi-site clinical trial[J]. Brain Stimulation, 2013, 6(2): 108-117. DOI: 10.1016/j.brs.2012.02.003.
 [^ref2]:JOHNSON K, RAMSEY D, KOZEL… F. Using imaging to target the prefrontal cortex for transcranial magnetic stimulation studies in treatment-resistant depression[J/OL]. Dialogues in clinical …, - pmc.ncbi.nlm.nih.govKA Johnson, D Ramsey, FA Kozel, DE Bohning, B Anderson, Z Nahas, HA Sackeïm…Dialogues in clinical neuroscience, 2006•pmc.ncbi.nlm.nih.gov, 2006. [2026-08-11]. https://pmc.ncbi.nlm.nih.gov/articles/PMC3181765/.
 [^ref3]:FENG Z, MARTIN S, GERARDOS G, et al. Cortical Stimulation Strength and sgACC Connectivity Shape Neuro‑Cardiac Responses to Prefrontal TMS[J]. bioRxiv, - biorxiv.orgZ Feng, S Martin, G Gerardos, K Weise, G Hartwigsen, T Knösche, O NumssenbioRxiv, 2026•biorxiv.org, 2026. DOI: 10.64898/2026.05.10.724073.
