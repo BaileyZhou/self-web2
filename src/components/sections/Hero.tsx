@@ -10,7 +10,7 @@ export default function Hero() {
   return (
     <section
       id="hero"
-      className="h-full flex flex-col items-center justify-center px-4 pt-20 pb-6"
+      className="h-screen flex flex-col items-center justify-center px-4 pt-20 pb-6"
     >
       <div className="container-custom">
         {/* 用纯 CSS 动画淡入上浮（不依赖 IntersectionObserver，避免首屏不显现） */}

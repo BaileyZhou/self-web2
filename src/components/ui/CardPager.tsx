@@ -14,6 +14,7 @@ import CodeExamples from '@/components/sections/CodeExamples'
 import Footer from '@/components/ui/Footer'
 import { pager } from '@/lib/pager'
 import type { KnowledgeItem } from '@/lib/knowledge-types'
+import type { PaperItem } from '@/lib/papers-types'
 
 /** 旧卡片完全淡出时长（毫秒）：淡出完成后再让新卡片淡入，杜绝两页混叠 */
 const FADE_OUT_MS = 320
@@ -24,8 +25,10 @@ const TRANSITION_MS = FADE_OUT_MS + FADE_IN_MS
 
 export default function CardPager({
   experienceItems = [],
+  papersItems = [],
 }: {
   experienceItems?: KnowledgeItem[]
+  papersItems?: PaperItem[]
 }) {
   const [current, setCurrent] = useState(0)
   // 正在淡出的旧卡片索引
@@ -49,10 +52,10 @@ export default function CardPager({
         { id: 'about', Comp: About, showFooter: true },
         { id: 'projects', Comp: Projects, showFooter: true },
         { id: 'experience', Comp: Experience, showFooter: true, items: experienceItems },
-        { id: 'papers', Comp: Papers, showFooter: true },
+        { id: 'papers', Comp: Papers, showFooter: true, items: papersItems },
         { id: 'code-examples', Comp: CodeExamples, showFooter: true },
       ] as const,
-    [experienceItems]
+    [experienceItems, papersItems]
   )
 
   const goTo = useCallback((index: number) => {
@@ -220,7 +223,7 @@ export default function CardPager({
                 className="flex-1 overflow-y-auto overscroll-contain"
               >
                 <div className="min-h-full">
-                  {page.id === 'experience' ? (
+                  {page.id === 'experience' || page.id === 'papers' ? (
                     <page.Comp items={page.items} />
                   ) : (
                     <page.Comp />

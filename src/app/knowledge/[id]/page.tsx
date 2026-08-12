@@ -131,7 +131,7 @@ export default async function KnowledgePage({
 
               {/* 底部：产品 × 研究视角 */}
               <p className="mt-8 text-xs text-slate-400">
-                产品经理 × 神经科学研究 · 持续沉淀
+                脑科学 × 神经科学研究 · 持续沉淀
               </p>
             </article>
 
