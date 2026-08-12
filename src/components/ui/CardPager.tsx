@@ -223,8 +223,13 @@ export default function CardPager({
                 className="flex-1 overflow-y-auto overscroll-contain"
               >
                 <div className="min-h-full">
-                  {page.id === 'experience' || page.id === 'papers' ? (
-                    <page.Comp items={page.items} />
+                  {/* experience(知识库) / papers(论文) 带各自的 items 类型，按 id 显式渲染避免
+                      联合类型冲突（KnowledgeItem[] | PaperItem[] 无法同时满足两种组件 props）；
+                      其余卡片无 props，走泛型渲染。 */}
+                  {page.id === 'experience' ? (
+                    <Experience items={experienceItems} />
+                  ) : page.id === 'papers' ? (
+                    <Papers items={papersItems} />
                   ) : (
                     <page.Comp />
                   )}
