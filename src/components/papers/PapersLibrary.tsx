@@ -19,8 +19,8 @@ import {
 import Footer from '@/components/ui/Footer'
 import type { PaperItem } from '@/lib/papers-types'
 
-/** 每页最多展示条数 */
-const PER_PAGE = 6
+/** 每页最多展示条数（与知识库/代码案例库一致） */
+const PER_PAGE = 20
 
 /** 排序方式（与截图一致） */
 const SORT_OPTIONS = ['最近加入', '最近更新', '年份', '被引', '评分', '标题'] as const

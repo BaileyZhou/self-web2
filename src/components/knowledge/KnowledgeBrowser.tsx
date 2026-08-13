@@ -4,7 +4,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Brain, Search, SearchX } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowRight, BookOpen, Brain, Search, SearchX } from 'lucide-react'
 import KnowledgeCard from '@/components/sections/KnowledgeCard'
 import Footer from '@/components/ui/Footer'
 import type { KnowledgeItem } from '@/lib/knowledge-types'
@@ -18,6 +19,9 @@ export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) 
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('全部')
   const [page, setPage] = useState(1)
+  // 右侧预览浮窗：点击卡片选中（在所有条目中查找，筛选后仍保持显示）
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const selected = items.find((i) => i.id === selectedId) || null
 
   // 全部分类（保持出现顺序，用于筛选）
   const categories = useMemo(
@@ -137,20 +141,28 @@ export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) 
             </div>
           </div>
 
-          {/* ═══ 卡片网格（与首页同款式样）；key 含页码，翻页时重新触发入场动画 ═══ */}
-          {currentItems.length > 0 ? (
-            <div key={safePage} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-              {currentItems.map((item, i) => (
-                <div
-                  key={item.id}
-                  className="stagger-in"
-                  style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
-                >
-                  <KnowledgeCard item={item} detailLabel={DETAIL_LABEL} />
+          {/* ═══ 主区 + 右侧预览浮窗 ═══ */}
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 mt-4">
+            <section className="min-w-0">
+              {/* 卡片网格（与首页同款式样）；key 含页码，翻页时重新触发入场动画 */}
+              {currentItems.length > 0 ? (
+                <div key={safePage} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {currentItems.map((item, i) => (
+                    <div
+                      key={item.id}
+                      className="stagger-in"
+                      style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
+                    >
+                      <KnowledgeCard
+                        item={item}
+                        detailLabel={DETAIL_LABEL}
+                        onSelect={setSelectedId}
+                        selected={selectedId === item.id}
+                      />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
+              ) : (
             <div className="text-center mt-16 text-slate-400">
               <SearchX size={40} className="mx-auto mb-3" />
               <p>没有找到匹配的知识笔记，换个关键字试试？</p>
@@ -207,6 +219,56 @@ export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) 
               </button>
             </div>
           )}
+            </section>
+
+            {/* ═══ 右侧：悬浮知识卡片预览浮窗（与论文/代码案例库一致） ═══ */}
+            <aside className="hidden lg:block">
+              <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain">
+                {selected ? (
+                  <div className="glass-card rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium text-sky-600 bg-sky-50/80 rounded-full px-2.5 py-1 border border-sky-200/50">
+                        {selected.category}
+                      </span>
+                      {selected.updated && (
+                        <span className="text-xs text-slate-400">{selected.updated}</span>
+                      )}
+                    </div>
+                    <h3 className="text-base font-semibold text-slate-800 leading-snug">
+                      {selected.title}
+                    </h3>
+                    {selected.intro && (
+                      <p className="text-sm text-slate-500 leading-relaxed">{selected.intro}</p>
+                    )}
+                    <p className="text-sm text-slate-500 leading-relaxed">{selected.summary}</p>
+                    {selected.tags && selected.tags.length > 0 && (
+                      <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5">
+                        {selected.tags.map((t) => (
+                          <span
+                            key={t}
+                            className="px-2 py-0.5 text-xs text-slate-500 bg-slate-100/80 rounded-full"
+                          >
+                            #{t}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <Link
+                      href={`/knowledge/${selected.id}`}
+                      className="mt-1 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-full bg-gradient-to-r from-sky-600 to-indigo-600 text-white text-sm font-medium shadow-md shadow-sky-500/25 hover:-translate-y-0.5 transition-all"
+                    >
+                      <BookOpen size={15} /> 阅读笔记 <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="glass-card rounded-2xl py-12 px-5 text-center">
+                    <BookOpen size={28} className="mx-auto mb-3 text-slate-300" />
+                    <p className="text-sm text-slate-400">选择一张知识卡片查看详情</p>
+                  </div>
+                )}
+              </div>
+            </aside>
+          </div>
         </div>
       </div>
       <Footer />

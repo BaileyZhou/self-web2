@@ -35,6 +35,7 @@ npm run start    # 预览构建产物（本地起静态服务）
 ├── public/
 │   ├── knowledge/*.md        # 📚 知识库内容（一个 .md = 一张知识卡片）
 │   ├── papers/*.md           # 📄 论文/文献库内容（一个 .md = 一篇文献）
+│   ├── code-examples/*.md    # 📦 代码案例内容（一个 .md = 一个业务流，含 GitHub 链接）
 │   ├── resume/resume_zhoubin.pdf
 │   └── knowledge/pic/        # 知识卡片封面图等静态资源
 ├── scripts/
@@ -46,12 +47,14 @@ npm run start    # 预览构建产物（本地起静态服务）
 │   │   ├── page.tsx          # 首页：读取知识+论文，最新 N 条 → CardPager
 │   │   ├── globals.css       # 全局样式（section-padding / stagger-in 动画等）
 │   │   ├── knowledge/        # /knowledge 列表页 + /knowledge/[id] 详情页
-│   │   └── papers/           # /papers 文库页 + /papers/[id] 详情页
+│   │   ├── papers/           # /papers 文库页 + /papers/[id] 详情页
+│   │   └── code-examples/    # /code-examples 代码案例列表页
 │   ├── components/
 │   │   ├── ui/               # 通用 UI：CardPager / Header / Footer / Section …
 │   │   ├── sections/         # 首页各区块：Hero / About / Projects / Experience / Papers / CodeExamples + 插画
 │   │   ├── knowledge/        # KnowledgeBrowser（知识库列表页交互）
-│   │   └── papers/           # PapersLibrary（论文文库交互）
+│   │   ├── papers/           # PapersLibrary（论文文库交互）
+│   │   └── code-examples/    # CodeExamplesLibrary（代码案例列表页交互）
 │   └── lib/                  # 数据读取与工具（见下）
 └── next.config.mjs / tailwind.config.js / tsconfig.json / package.json
 ```
@@ -63,7 +66,8 @@ npm run start    # 预览构建产物（本地起静态服务）
 | `data.ts` | 全站**配置数据**的唯一入口（导航 / Hero / 各区块文案与 `visibleCount` 等） |
 | `knowledge.ts` | 读取 `public/knowledge/*.md`（**服务端专用**，`server-only` + fs + gray-matter） |
 | `papers.ts` | 读取 `public/papers/*.md`（**服务端专用**，自动提取文献元数据） |
-| `knowledge-types.ts` / `papers-types.ts` | 客户端可安全引用的类型定义 |
+| `code-examples.ts` | 读取 `public/code-examples/*.md`（**服务端专用**，业务流 + GitHub 链接） |
+| `knowledge-types.ts` / `papers-types.ts` / `code-examples-types.ts` | 客户端可安全引用的类型定义 |
 | `pager.ts` | 卡片翻页器全局单例（供 Header / 进度点等跨树切换卡片） |
 | `scroll.ts` | 平滑滚动工具（easeInOutCubic 缓动，尊重系统「减少动态」设置） |
 | `daily-theme.ts` | 每日主题数据 + 取当天主题的纯函数 |
@@ -123,14 +127,15 @@ flowchart LR
 
 | 路由 | 文件 | 说明 |
 | --- | --- | --- |
-| `/` | `app/page.tsx` + `CardPager` | 首页翻页器；知识库/论文展示最新 N 条卡片 |
-| `/knowledge`、`/papers` | 服务端 wrapper → 客户端组件 | 完整文库列表页 |
+| `/` | `app/page.tsx` + `CardPager` | 首页翻页器；知识库/论文/代码案例展示最新 N 条卡片 |
+| `/knowledge`、`/papers`、`/code-examples` | 服务端 wrapper → 客户端组件 | 完整文库/列表页 |
 | `/knowledge/[id]`、`/papers/[id]` | 服务端详情页 | Markdown 正文 + 侧栏元信息 |
 
 - **知识库列表页**（`KnowledgeBrowser`）：关键字检索 + 分类筛选 + 分页（每页 20 条），页脚固定。
 - **论文文库**（`PapersLibrary`）：关键字检索 + 排序（最近加入/更新/年份/被引/评分/标题）+ **课题筛选（单选/多选开关）** + 阅读状态筛选 + 标准/紧凑视图 + 分页（每页 6 条）+ 右侧**悬浮详情面板**。
   - 课题筛选支持多选（OR 逻辑），卡片上的课题标签始终优先展示当前筛选的课题（稳定散列决定随机隐藏哪一个，避免重排闪烁）。
-- **列表页入场动画**：两个列表页卡片使用 `.stagger-in`（淡入上浮、逐张错开），分页切换时整组重放。
+- **代码案例列表页**（`CodeExamplesLibrary`）：以**业务流**为单位，关键字检索 + 分页（每页 9 个）；每张业务流卡片展示 标签/标题/简介 + 子模块链接 + 主 GitHub 链接按钮。
+- **列表页入场动画**：三个列表页卡片使用 `.stagger-in`（淡入上浮、逐张错开），分页切换时整组重放。
 
 ### 5. 每日主题背景（`DailyThemeBackground` + `daily-theme.ts`）
 
@@ -189,9 +194,29 @@ intro: 详情页引言
 正文（支持 Markdown）
 ```
 
+### 📦 新增一个代码业务流
+
+在 `public/code-examples/` 新建 `.md` 文件（文件名即 id）：
+
+```markdown
+---
+title: 我的业务流名称
+summary: 一句话简介（卡片 / 列表展示）
+tags: [标签A, 标签B]
+github: https://github.com/xxx/yyy          # 主仓库链接
+links:                                       # 可选：业务流内子模块 / 关联仓库
+  - label: 子模块A
+    url: https://github.com/xxx/aaa
+updated: 2024-06                             # 'YYYY-MM'，最近更新排序
+---
+业务流正文（支持 Markdown）
+```
+
+每个业务流 = 一张卡片（首页展示最新 3 个，列表页展示全部），卡片底部是主 GitHub 链接按钮，子模块以标签形式链接到各自仓库。
+
 ### ⚙️ 首页展示条数 / 文案
 
-在 `src/lib/data.ts` 对应区块调整：`experience.visibleCount`（知识库）、`papers.visibleCount`（论文）、`projects.visibleCount`（项目）等；各类按钮文案（`showMoreLabel` / `detailLinkLabel` / `listPage`）也在同一文件。
+在 `src/lib/data.ts` 对应区块调整：`experience.visibleCount`（知识库）、`papers.visibleCount`（论文）、`codeExamples.visibleCount`（代码案例）、`projects.visibleCount`（项目）等；各类按钮文案（`showMoreLabel` / `detailLinkLabel` / `listPage`）也在同一文件。
 
 ---
 

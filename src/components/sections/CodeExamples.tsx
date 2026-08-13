@@ -1,17 +1,68 @@
 // src/components/sections/CodeExamples.tsx
-import ProjectGrid from '@/components/sections/ProjectGrid'
+// “代码案例”区块（首页）：以「业务流」为单位展示最新 N 条业务流卡片（N = codeExamples.visibleCount），
+// 卡片带 GitHub 超链接；「查看更多」进入代码案例列表页 /code-examples。
+'use client'
+
+import { useEffect } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import Section from '@/components/ui/Section'
+import SectionHeader from '@/components/ui/SectionHeader'
+import CodeFlowCard from '@/components/sections/CodeFlowCard'
 import CodeIllustration from '@/components/sections/CodeIllustration'
 import { codeExamples } from '@/lib/data'
+import type { CodeFlowItem } from '@/lib/code-examples-types'
 
-export default function CodeExamples() {
+export default function CodeExamples({ items = [] }: { items?: CodeFlowItem[] }) {
+  const router = useRouter()
+
+  // 预加载代码案例列表页：避免首次点击「查看更多」时等待下载/渲染造成卡顿
+  useEffect(() => {
+    router.prefetch(codeExamples.listPage)
+    if (process.env.NODE_ENV === 'development') {
+      fetch(codeExamples.listPage, { cache: 'no-store' }).catch(() => {})
+    }
+  }, [router])
+
+  // 首页展示「最近更新前 N 个业务流」（数据已由服务端排序后传入）
+  const displayed = items.slice(0, codeExamples.visibleCount)
+
   return (
-    <ProjectGrid
-      id="code-examples"
-      variant="fuchsia"
-      index="05"
-      config={codeExamples}
-      illustration={<CodeIllustration />}
-      illustrationSide="right"
-    />
+    <Section id="code-examples" variant="fuchsia" className="section-padding">
+      <div className="container-custom">
+        <SectionHeader
+          title={codeExamples.title}
+          subtitle={codeExamples.subtitle}
+          badge={codeExamples.badge}
+          index="05"
+        />
+
+        <div className="grid lg:grid-cols-3 gap-8 items-start mt-8">
+          {/* 代码案例插画（左侧 1/3，吸附跟随） */}
+          <div className="lg:order-1 lg:sticky lg:top-24 self-start flex justify-center">
+            <CodeIllustration />
+          </div>
+
+          {/* 业务流卡片（右侧 2/3，最近更新前 N 个） */}
+          <div className="lg:col-span-2 lg:order-2">
+            <div className="grid sm:grid-cols-2 gap-6">
+              {displayed.map((flow) => (
+                <CodeFlowCard key={flow.id} flow={flow} githubLabel={codeExamples.detailLinkLabel} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 查看更多 → 进入代码案例列表页（不在当前页展开） */}
+        <div className="text-center mt-10">
+          <Link
+            href={codeExamples.listPage}
+            className="px-6 py-2.5 rounded-full border border-fuchsia-200/50 text-slate-600 hover:text-fuchsia-600 hover:border-fuchsia-400 transition-all glass-card"
+          >
+            {codeExamples.showMoreLabel}
+          </Link>
+        </div>
+      </div>
+    </Section>
   )
 }

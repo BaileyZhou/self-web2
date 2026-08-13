@@ -297,57 +297,25 @@ export const codeExamples = {
   title: '代码案例',
   /** 区块副标题 */
   subtitle: '一些值得分享的代码片段与开源项目',
-  /** 默认展示几条（超出后用“查看更多”按钮展开） */
-  visibleCount: 3,
-  /** “查看更多”按钮文字 */
+  /** 首页展示条数（按最近更新倒序取最新前 N 个业务流） */
+  visibleCount: 4,
+  /** “查看更多”按钮文字（点击进入代码案例列表页） */
   showMoreLabel: '查看更多案例 →',
-  /** “收起”按钮文字 */
-  showLessLabel: '收起',
-  /** 每张卡片底部链接的文字 */
-  detailLinkLabel: '查看源码 →',
-  /** ⭐ 代码案例列表：以项目为模块展示，想增加就复制一项，想删除就删掉一项 */
-  items: [
-    {
-      id: 'code-1',
-      title: 'EEG 信号预处理管道', // 案例名称
-      description: '基于 Python 的 EEG 信号预处理流程，包含滤波、伪迹去除与数据分段。',
-      category: 'Python', // 分类标签
-      status: '开源', // 状态（可留空）
-      image: '', // 封面图路径（可留空）
-      tags: ['EEG', 'Python', '信号处理'], // 技术标签
-      link: 'https://github.com/', // 代码/仓库链接：改成你的地址
-    },
-    {
-      id: 'code-2',
-      title: '神经影像分析工具包',
-      description: '用于 fMRI 数据的可视化与分析脚本，简化研究团队的日常处理流程。',
-      category: 'Python',
-      status: '已发布',
-      image: '',
-      tags: ['fMRI', 'Python', '可视化'],
-      link: 'https://github.com/',
-    },
-    {
-      id: 'code-3',
-      title: 'TMS 刺激协议生成器',
-      description: '根据研究参数自动生成经颅磁刺激协议文件，并校验参数合法性。',
-      category: 'JavaScript',
-      status: '内部工具',
-      image: '',
-      tags: ['TMS', 'JavaScript', '工具'],
-      link: 'https://github.com/',
-    },
-    {
-      id: 'code-4',
-      title: '行为实验数据整理脚本',
-      description: '将多源行为实验数据统一格式并生成可视化报告，支持批量处理。',
-      category: 'R',
-      status: '开源',
-      image: '',
-      tags: ['R', '数据分析', '实验'],
-      link: 'https://github.com/',
-    },
-  ],
+  /** 卡片底部 GitHub 链接按钮的文字 */
+  detailLinkLabel: '查看 GitHub →',
+  /** “查看更多”跳转的代码案例列表页路径 */
+  listPage: '/code-examples',
+  /**
+   * ════════════════════════════════════════════════════════════
+   *  ⭐ 新增/管理业务流 = 在 public/code-examples/ 下新建/编辑 .md 文件即可！
+   *     · 文件名 = 唯一英文 id（如 eeg-analysis-pipeline）
+   *     · 文件头部 YAML frontmatter 定义元数据（系统自动提取）：
+   *         title / summary / tags / github(主仓库链接) /
+   *         links(可选，业务流内子模块: [{label, url}]) / updated('YYYY-MM')
+   *     · frontmatter 之后即正文 body（支持 Markdown）
+   *     · 首页展示「最近更新前 4 个业务流」；全部进入列表页 /code-examples
+   * ════════════════════════════════════════════════════════════
+   */
 }
 
 // ════════════════════════════════════════════════════════════

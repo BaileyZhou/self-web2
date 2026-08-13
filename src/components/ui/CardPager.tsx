@@ -15,6 +15,7 @@ import Footer from '@/components/ui/Footer'
 import { pager } from '@/lib/pager'
 import type { KnowledgeItem } from '@/lib/knowledge-types'
 import type { PaperItem } from '@/lib/papers-types'
+import type { CodeFlowItem } from '@/lib/code-examples-types'
 
 /** 旧卡片完全淡出时长（毫秒）：淡出完成后再让新卡片淡入，杜绝两页混叠 */
 const FADE_OUT_MS = 320
@@ -26,9 +27,11 @@ const TRANSITION_MS = FADE_OUT_MS + FADE_IN_MS
 export default function CardPager({
   experienceItems = [],
   papersItems = [],
+  codeFlowItems = [],
 }: {
   experienceItems?: KnowledgeItem[]
   papersItems?: PaperItem[]
+  codeFlowItems?: CodeFlowItem[]
 }) {
   const [current, setCurrent] = useState(0)
   // 正在淡出的旧卡片索引
@@ -53,9 +56,9 @@ export default function CardPager({
         { id: 'projects', Comp: Projects, showFooter: true },
         { id: 'experience', Comp: Experience, showFooter: true, items: experienceItems },
         { id: 'papers', Comp: Papers, showFooter: true, items: papersItems },
-        { id: 'code-examples', Comp: CodeExamples, showFooter: true },
+        { id: 'code-examples', Comp: CodeExamples, showFooter: true, items: codeFlowItems },
       ] as const,
-    [experienceItems, papersItems]
+    [experienceItems, papersItems, codeFlowItems]
   )
 
   const goTo = useCallback((index: number) => {
@@ -223,13 +226,14 @@ export default function CardPager({
                 className="flex-1 overflow-y-auto overscroll-contain"
               >
                 <div className="min-h-full">
-                  {/* experience(知识库) / papers(论文) 带各自的 items 类型，按 id 显式渲染避免
-                      联合类型冲突（KnowledgeItem[] | PaperItem[] 无法同时满足两种组件 props）；
-                      其余卡片无 props，走泛型渲染。 */}
+                  {/* experience(知识库) / papers(论文) / code-examples(代码案例) 带各自的 items 类型，
+                      按 id 显式渲染避免联合类型冲突；其余卡片无 props，走泛型渲染。 */}
                   {page.id === 'experience' ? (
                     <Experience items={experienceItems} />
                   ) : page.id === 'papers' ? (
                     <Papers items={papersItems} />
+                  ) : page.id === 'code-examples' ? (
+                    <CodeExamples items={codeFlowItems} />
                   ) : (
                     <page.Comp />
                   )}
