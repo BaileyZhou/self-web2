@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Section from '@/components/ui/Section'
 import SectionHeader from '@/components/ui/SectionHeader'
+import LayeredContent from '@/components/ui/LayeredContent'
 import CodeFlowCard from '@/components/sections/CodeFlowCard'
 import CodeIllustration from '@/components/sections/CodeIllustration'
 import { codeExamples } from '@/lib/data'
@@ -37,21 +38,14 @@ export default function CodeExamples({ items = [] }: { items?: CodeFlowItem[] })
           index="05"
         />
 
-        <div className="grid lg:grid-cols-3 gap-8 items-start mt-8">
-          {/* 代码案例插画（左侧 1/3，吸附跟随） */}
-          <div className="lg:order-1 lg:sticky lg:top-24 self-start flex justify-center">
-            <CodeIllustration />
+        <LayeredContent illustration={<CodeIllustration />} className="mt-8" side="right">
+          {/* 业务流卡片（毛玻璃浮于底层插画之上，最近更新前 N 个） */}
+          <div className="grid sm:grid-cols-2 gap-6">
+            {displayed.map((flow) => (
+              <CodeFlowCard key={flow.id} flow={flow} githubLabel={codeExamples.detailLinkLabel} />
+            ))}
           </div>
-
-          {/* 业务流卡片（右侧 2/3，最近更新前 N 个） */}
-          <div className="lg:col-span-2 lg:order-2">
-            <div className="grid sm:grid-cols-2 gap-6">
-              {displayed.map((flow) => (
-                <CodeFlowCard key={flow.id} flow={flow} githubLabel={codeExamples.detailLinkLabel} />
-              ))}
-            </div>
-          </div>
-        </div>
+        </LayeredContent>
 
         {/* 查看更多 → 进入代码案例列表页（不在当前页展开） */}
         <div className="text-center mt-10">

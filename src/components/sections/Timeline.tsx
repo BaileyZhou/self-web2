@@ -7,6 +7,7 @@ import { ReactNode, useState } from 'react'
 import { Briefcase, FolderKanban } from 'lucide-react'
 import Section from '@/components/ui/Section'
 import SectionHeader from '@/components/ui/SectionHeader'
+import LayeredContent from '@/components/ui/LayeredContent'
 
 // 时间线条目
 interface TimelineItem {
@@ -69,20 +70,9 @@ export default function Timeline({
           index={index}
         />
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start mt-10">
-          {/* 插画列（大屏吸附跟随，移动端在时间线上方） */}
-          {illustration && (
-            <div
-              className={`flex justify-center lg:sticky lg:top-24 self-start ${
-                illustrationSide === 'left' ? 'lg:order-1' : 'lg:order-2'
-              }`}
-            >
-              {illustration}
-            </div>
-          )}
-
-          {/* 时间线列 */}
-          <div className={illustration ? (illustrationSide === 'left' ? 'lg:order-2' : 'lg:order-1') : ''}>
+        <LayeredContent illustration={illustration} className="mt-10" side={illustrationSide}>
+          {/* 时间线列（毛玻璃浮于底层插画之上） */}
+          <div className="lg:max-w-3xl">
         <div className="relative">
           {/* 左侧渐变竖线（时间轴线） */}
           <div
@@ -100,7 +90,7 @@ export default function Timeline({
                 />
 
                 {/* 长条形卡片 */}
-                <div className="glass-card rounded-xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10 hover:border-violet-200/70">
+                <div className="glass-card card-hover-smooth rounded-xl p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/10 hover:border-violet-200/70">
                   <div className="flex flex-wrap items-center gap-3 mb-3">
                     {/* 类型图标 */}
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-md shadow-violet-500/25">
@@ -116,14 +106,14 @@ export default function Timeline({
                     </span>
                   </div>
 
-                  <h3 className="text-lg font-semibold text-slate-800">{item.title}</h3>
+                  <h3 className="text-lg font-semibold text-slate-800 text-lift">{item.title}</h3>
                   <p className="text-sm text-violet-600">
                     {item.organization}
                     {item.role ? ` · ${item.role}` : ''}
                   </p>
 
                   {item.description && (
-                    <p className="mt-2 text-sm text-slate-500 leading-relaxed">{item.description}</p>
+                    <p className="mt-2 text-sm text-slate-500 text-lift leading-relaxed">{item.description}</p>
                   )}
 
                   {item.highlights && item.highlights.length > 0 && (
@@ -166,7 +156,7 @@ export default function Timeline({
           </div>
         )}
           </div>
-        </div>
+        </LayeredContent>
       </div>
     </Section>
   )

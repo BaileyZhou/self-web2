@@ -5,9 +5,11 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, BookOpen, Brain, Search, SearchX } from 'lucide-react'
+import { ArrowRight, BookOpen, Brain, SearchX } from 'lucide-react'
 import KnowledgeCard from '@/components/sections/KnowledgeCard'
 import Footer from '@/components/ui/Footer'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import type { KnowledgeItem } from '@/lib/knowledge-types'
 
 /** 每页最多展示条数 */
@@ -94,21 +96,16 @@ export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) 
 
               {/* 检索栏 */}
               <div className="mt-6 flex items-center gap-2 max-w-xl mx-auto">
-                <div className="relative flex-1">
-                  <Search
-                    size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <input
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value)
-                      setPage(1)
-                    }}
-                    placeholder="请输入关键字检索知识笔记…"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-full border border-sky-200/60 bg-white/80 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40 focus:border-sky-400 transition-all"
-                  />
-                </div>
+                <SearchInput
+                  value={query}
+                  onChange={(v) => {
+                    setQuery(v)
+                    setPage(1)
+                  }}
+                  placeholder="请输入关键字检索知识笔记…"
+                  accent="sky"
+                  className="flex-1"
+                />
                 <button
                   type="button"
                   onClick={() => setPage(1)}
@@ -170,55 +167,7 @@ export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) 
           )}
 
           {/* ═══ 分页（每页最多 20 条） ═══ */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-12">
-              <button
-                type="button"
-                onClick={() => goPage(safePage - 1)}
-                disabled={safePage <= 1}
-                className="px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:text-sky-600 hover:border-sky-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                上一页
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
-                .reduce<number[]>((acc, p) => {
-                  if (acc.length && p - acc[acc.length - 1] > 1) acc.push(-1) // 省略号占位
-                  acc.push(p)
-                  return acc
-                }, [])
-                .map((p, idx) =>
-                  p === -1 ? (
-                    <span key={`gap-${idx}`} className="px-1 text-slate-400">
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => goPage(p)}
-                      className={`h-9 w-9 rounded-full text-sm transition-all ${
-                        p === safePage
-                          ? 'bg-gradient-to-br from-sky-600 to-indigo-600 text-white shadow-md shadow-sky-500/25'
-                          : 'text-slate-600 hover:text-sky-600 hover:bg-sky-50'
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
-                )}
-
-              <button
-                type="button"
-                onClick={() => goPage(safePage + 1)}
-                disabled={safePage >= totalPages}
-                className="px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:text-sky-600 hover:border-sky-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                下一页
-              </button>
-            </div>
-          )}
+          <Pagination page={safePage} totalPages={totalPages} onChange={goPage} accent="sky" className="mt-12" />
             </section>
 
             {/* ═══ 右侧：悬浮知识卡片预览浮窗（与论文/代码案例库一致） ═══ */}

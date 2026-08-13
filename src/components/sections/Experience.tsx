@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Section from '@/components/ui/Section'
 import SectionHeader from '@/components/ui/SectionHeader'
+import LayeredContent from '@/components/ui/LayeredContent'
 import KnowledgeCard from '@/components/sections/KnowledgeCard'
 import KnowledgeIllustration from '@/components/sections/KnowledgeIllustration'
 import { experience } from '@/lib/data'
@@ -45,21 +46,14 @@ export default function Experience({
           index="03"
         />
 
-        <div className="grid lg:grid-cols-3 gap-8 items-start mt-8">
-          {/* 知识卡片（左侧 2/3，时间倒序前 4 条） */}
-          <div className="lg:col-span-2 lg:order-1">
-            <div className="grid sm:grid-cols-2 gap-6">
-              {displayed.map((item) => (
-                <KnowledgeCard key={item.id} item={item} detailLabel={experience.detailLinkLabel} />
-              ))}
-            </div>
+        <LayeredContent illustration={<KnowledgeIllustration />} className="mt-8" side="right">
+          {/* 知识卡片（毛玻璃浮于底层插画之上，时间倒序前 N 条） */}
+          <div className="grid sm:grid-cols-2 gap-6">
+            {displayed.map((item) => (
+              <KnowledgeCard key={item.id} item={item} detailLabel={experience.detailLinkLabel} />
+            ))}
           </div>
-
-          {/* 知识库插画（右侧 1/3，吸附跟随） */}
-          <div className="lg:order-2 lg:sticky lg:top-24 self-start flex justify-center">
-            <KnowledgeIllustration />
-          </div>
-        </div>
+        </LayeredContent>
 
         {/* 查看更多 → 进入知识库列表页（不在当前页展开） */}
         <div className="text-center mt-10">

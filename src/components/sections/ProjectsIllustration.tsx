@@ -1,8 +1,9 @@
 // src/components/sections/ProjectsIllustration.tsx
 // “项目与经历”区块的卡通插画：与“关于我”同一人物/风格，
 // 主题色为紫罗兰，漂浮元素为火箭、项目文件夹与齿轮。
-import { FolderKanban, Rocket, Sparkles } from 'lucide-react'
+import { FolderKanban, Rocket } from 'lucide-react'
 import IllustrationBase, { type IllustrationTheme } from '@/components/sections/IllustrationBase'
+import FloatingChips from '@/components/ui/FloatingChips'
 
 const theme: IllustrationTheme = {
   glow: ['rgba(167,139,250,0.45)', 'rgba(217,70,239,0.28)', 'rgba(129,140,248,0.35)'],
@@ -26,23 +27,14 @@ export default function ProjectsIllustration() {
       theme={theme}
       showCharacter={false}
       chips={
-        <>
-          <div className="absolute top-4 -left-2 sm:left-0 animate-float glass-card rounded-full pl-1.5 pr-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-violet-600 shadow-md">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
-              <FolderKanban size={12} />
-            </span>
-            项目管理
-          </div>
-          <div className="absolute bottom-10 -right-2 sm:right-0 animate-float-delayed glass-card rounded-full pl-1.5 pr-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-fuchsia-600 shadow-md">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-pink-500 text-white">
-              <Rocket size={12} />
-            </span>
-            产品交付
-          </div>
-          <div className="absolute top-1/2 -right-4 hidden sm:flex animate-wiggle glass-card rounded-full p-2 text-violet-500 shadow-md">
-            <Sparkles size={14} />
-          </div>
-        </>
+        <FloatingChips
+          side="left"
+          sparkleColor="text-violet-500"
+          chips={[
+            { icon: <FolderKanban size={12} />, label: '项目管理', position: 'top-4', animation: 'animate-float', textColor: 'text-violet-600', gradientFrom: 'from-violet-500', gradientTo: 'to-fuchsia-500' },
+            { icon: <Rocket size={12} />, label: '产品交付', position: 'bottom-10', animation: 'animate-float-delayed', textColor: 'text-fuchsia-600', gradientFrom: 'from-fuchsia-500', gradientTo: 'to-pink-500' },
+          ]}
+        />
       }
     >
       {/* 中央：火箭（大主体，缓缓漂浮） */}

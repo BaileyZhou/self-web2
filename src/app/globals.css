@@ -27,12 +27,42 @@
 }
 
 @layer components {
+  /* 毛玻璃卡片（全站卡片常态质感）：更强的模糊 + 更透的底色，
+     让底层（卡通插画 / 每日主题背景）能透过卡片被模糊看到，形成双层层次感。 */
   .glass-card {
-    @apply bg-white/70 backdrop-blur-sm border border-white/30 shadow-lg shadow-indigo-500/5;
+    @apply bg-white/25 backdrop-blur-md border border-white/40 shadow-lg shadow-indigo-500/5;
   }
   
   .glass-card-dark {
-    @apply bg-white/80 backdrop-blur-sm border border-white/40 shadow-xl shadow-indigo-500/10;
+    @apply bg-white/35 backdrop-blur-md border border-white/50 shadow-xl shadow-indigo-500/10;
+  }
+
+  /* 卡片 hover 颜色渐变过渡：卡片内文字/标签/徽章的颜色变化平滑渐变（300ms），
+     避免 hover 时颜色突然跳变引起的不自然。仅作用于子元素的 color/背景/边框。 */
+  .card-hover-smooth * {
+    transition-property: color, background-color, border-color;
+    transition-duration: 300ms;
+    transition-timing-function: ease-out;
+  }
+
+  /* 文字抬升：深色文字叠在插画/图片之上时，用柔和白色投影增强可读性 */
+  .text-lift {
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+  }
+
+  /* 插画层跟随卡片淡入：默认完全隐藏，仅当所在卡片可见（.card-visible）时延迟淡入。
+     卡片淡入约 420ms；插画延迟 500ms 才开始淡入，确保卡通/光晕只在卡片完全稳定后
+     才从玻璃后显现——首次加载、再次访问、切换页面都生效，
+     彻底避免卡通边缘在卡片未显现前先“浮到前面”的闪现。 */
+  .illustration-fade-in {
+    opacity: 0;
+  }
+  .pager-card-hidden .illustration-fade-in {
+    opacity: 0;
+  }
+  .card-visible .illustration-fade-in {
+    opacity: 1;
+    transition: opacity 0.5s ease-out 0.5s;
   }
 
   /* 翻页卡片性能优化：隐藏卡片暂停内部所有 CSS 动画，

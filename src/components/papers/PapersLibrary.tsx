@@ -7,7 +7,6 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
-  Search,
   Star,
   BookOpen,
   ArrowRight,
@@ -17,6 +16,8 @@ import {
   Tags,
 } from 'lucide-react'
 import Footer from '@/components/ui/Footer'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import type { PaperItem } from '@/lib/papers-types'
 
 /** 每页最多展示条数（与知识库/代码案例库一致） */
@@ -40,7 +41,7 @@ function RatingStars({ rating }: { rating: number }) {
         <Star
           key={i}
           size={13}
-          className={i <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200'}
+          className={i <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-200 group-hover:text-white/50'}
         />
       ))}
     </span>
@@ -91,12 +92,12 @@ function TopicChips({
       {toShow.map((t) => (
         <span
           key={t}
-          className="text-xs font-medium text-rose-600 bg-rose-50/80 rounded-full px-2 py-0.5 border border-rose-200/50"
+          className="text-xs font-medium text-rose-600 bg-rose-50/80 rounded-full px-2 py-0.5 border border-rose-200/50 group-hover:text-white group-hover:bg-white/25 group-hover:border-white/40"
         >
           {t}
         </span>
       ))}
-      {hidden > 0 && <span className="text-xs text-rose-400 self-center">+{hidden}</span>}
+      {hidden > 0 && <span className="text-xs text-rose-400 self-center group-hover:text-rose-100">+{hidden}</span>}
     </span>
   )
 }
@@ -365,21 +366,16 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
                 </div>
 
                 {/* 检索栏 */}
-                <div className="mt-4 relative">
-                  <Search
-                    size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                  <input
-                    value={query}
-                    onChange={(e) => {
-                      setQuery(e.target.value)
-                      setPage(1)
-                    }}
-                    placeholder="搜索标题、作者、DOI 或来源"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-full border border-slate-200 bg-white/80 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-400/40 focus:border-rose-400 transition-all"
-                  />
-                </div>
+                <SearchInput
+                  value={query}
+                  onChange={(v) => {
+                    setQuery(v)
+                    setPage(1)
+                  }}
+                  placeholder="搜索标题、作者、DOI 或来源"
+                  accent="rose"
+                  className="mt-4"
+                />
 
                 {/* 排序 tabs + 视图切换 */}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -443,29 +439,36 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
                         type="button"
                         onClick={() => setSelectedId(p.id)}
                         style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
-                        className={`stagger-in text-left group h-full rounded-2xl p-5 border transition-all bg-white/70 backdrop-blur-sm shadow-sm ${
+                        className={`stagger-in text-left group relative card-hover-smooth h-full rounded-2xl p-5 border border-white/40 transition-all bg-white/25 backdrop-blur-md shadow-sm overflow-hidden ${
                           selectedId === p.id
-                            ? 'border-rose-400 ring-2 ring-rose-200'
-                            : 'border-white/40 hover:border-rose-300 hover:shadow-md'
+                            ? 'ring-2 ring-rose-300'
+                            : 'hover:border-rose-300 hover:shadow-md'
                         }`}
                       >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <TopicChips topics={p.topics} activeTopics={selectedTopics} seed={p.id} />
-                          <span className={`shrink-0 text-xs rounded-full px-2 py-0.5 border ${statusCls(p.status)}`}>
-                            {p.status}
-                          </span>
-                        </div>
-                        <h3 className="text-sm font-semibold text-slate-800 leading-snug line-clamp-2">
-                          {p.title}
-                        </h3>
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-1">
-                          {p.authors.length ? p.authors.join('、') : ''}
-                          {p.year ? ` · ${p.year}` : ''}
-                        </p>
-                        <p className="text-xs text-slate-500 line-clamp-2 mt-2">{p.summary}</p>
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
-                          <span className="text-xs text-slate-400">{p.citations} 被引</span>
-                          <RatingStars rating={p.rating} />
+                        {/* 悬停渐变填充层（毛玻璃 → 玫瑰渐变） */}
+                        <div
+                          aria-hidden
+                          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-rose-500 to-pink-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        />
+                        <div className="relative">
+                          <div className="flex items-center justify-between gap-2 mb-2">
+                            <TopicChips topics={p.topics} activeTopics={selectedTopics} seed={p.id} />
+                            <span className={`shrink-0 text-xs rounded-full px-2 py-0.5 border group-hover:text-white group-hover:bg-white/25 group-hover:border-white/40 ${statusCls(p.status)}`}>
+                              {p.status}
+                            </span>
+                          </div>
+                          <h3 className="text-sm font-semibold text-slate-800 text-lift group-hover:text-white leading-snug line-clamp-2">
+                            {p.title}
+                          </h3>
+                          <p className="text-xs text-slate-400 group-hover:text-rose-100 mt-1 line-clamp-1">
+                            {p.authors.length ? p.authors.join('、') : ''}
+                            {p.year ? ` · ${p.year}` : ''}
+                          </p>
+                          <p className="text-xs text-slate-500 text-lift group-hover:text-rose-50 line-clamp-2 mt-2">{p.summary}</p>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 group-hover:border-white/30">
+                            <span className="text-xs text-slate-400 group-hover:text-white">{p.citations} 被引</span>
+                            <RatingStars rating={p.rating} />
+                          </div>
                         </div>
                       </button>
                     ))}
@@ -480,7 +483,7 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
                         onClick={() => setSelectedId(p.id)}
                         style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
                         className={`stagger-in w-full text-left flex items-center gap-4 px-5 py-3.5 transition-all hover:bg-rose-50/40 ${
-                          selectedId === p.id ? 'bg-rose-50/60' : ''
+                          selectedId === p.id ? 'bg-rose-50/60 ring-2 ring-inset ring-rose-200' : ''
                         }`}
                       >
                         <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${statusCls(p.status)}`}>
@@ -502,47 +505,7 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
               </div>
 
               {/* 分页 */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    type="button"
-                    onClick={() => goPage(safePage - 1)}
-                    disabled={safePage <= 1}
-                    className="px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:text-rose-600 hover:border-rose-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    上一页
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
-                    .map((p, idx, arr) => {
-                      const prev = arr[idx - 1]
-                      return (
-                        <span key={p} className="flex items-center gap-2">
-                          {prev != null && p - prev > 1 && <span className="text-slate-400">…</span>}
-                          <button
-                            type="button"
-                            onClick={() => goPage(p)}
-                            className={`h-9 w-9 rounded-full text-sm transition-all ${
-                              p === safePage
-                                ? 'bg-gradient-to-br from-rose-600 to-pink-600 text-white shadow-md shadow-rose-500/25'
-                                : 'text-slate-600 hover:text-rose-600 hover:bg-rose-50'
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        </span>
-                      )
-                    })}
-                  <button
-                    type="button"
-                    onClick={() => goPage(safePage + 1)}
-                    disabled={safePage >= totalPages}
-                    className="px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:text-rose-600 hover:border-rose-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    下一页
-                  </button>
-                </div>
-              )}
+              <Pagination page={safePage} totalPages={totalPages} onChange={goPage} accent="rose" />
             </section>
 
             {/* ═══ 右侧：悬浮文献详情面板（随滚动保持可见，内部可滚动展示完整信息） ═══ */}

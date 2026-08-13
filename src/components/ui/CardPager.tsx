@@ -210,7 +210,7 @@ export default function CardPager({
         } else if (isCurrent) {
           // 新卡片：淡入阶段才显示，其余时间隐藏（等待旧页淡出完成）
           cls += ` duration-[420ms] ${
-            currentVisible ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+            currentVisible ? 'opacity-100 z-10 card-visible' : 'opacity-0 z-0 pointer-events-none'
           }`
         } else {
           cls += ' opacity-0 z-0 pointer-events-none pager-card-hidden'

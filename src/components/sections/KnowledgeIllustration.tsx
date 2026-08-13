@@ -1,8 +1,9 @@
 // src/components/sections/KnowledgeIllustration.tsx
 // “知识库”区块的卡通插画：与“关于我”同一人物/风格，
 // 主题色为天空蓝，漂浮元素为灯泡与书本堆。
-import { BookOpen, GraduationCap, Sparkles } from 'lucide-react'
+import { BookOpen, GraduationCap } from 'lucide-react'
 import IllustrationBase, { type IllustrationTheme } from '@/components/sections/IllustrationBase'
+import FloatingChips from '@/components/ui/FloatingChips'
 
 const theme: IllustrationTheme = {
   glow: ['rgba(125,211,252,0.45)', 'rgba(99,102,241,0.28)', 'rgba(165,243,252,0.4)'],
@@ -26,23 +27,14 @@ export default function KnowledgeIllustration() {
       theme={theme}
       showCharacter={false}
       chips={
-        <>
-          <div className="absolute top-4 -left-2 sm:left-0 animate-float glass-card rounded-full pl-1.5 pr-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-sky-600 shadow-md">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-indigo-500 text-white">
-              <BookOpen size={12} />
-            </span>
-            知识沉淀
-          </div>
-          <div className="absolute bottom-10 -right-2 sm:right-0 animate-float-delayed glass-card rounded-full pl-1.5 pr-3 py-1.5 flex items-center gap-1.5 text-xs font-medium text-indigo-600 shadow-md">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
-              <GraduationCap size={12} />
-            </span>
-            持续学习
-          </div>
-          <div className="absolute top-1/2 -right-4 hidden sm:flex animate-wiggle glass-card rounded-full p-2 text-sky-500 shadow-md">
-            <Sparkles size={14} />
-          </div>
-        </>
+        <FloatingChips
+          side="right"
+          sparkleColor="text-sky-500"
+          chips={[
+            { icon: <BookOpen size={12} />, label: '知识沉淀', position: 'top-4', animation: 'animate-float', textColor: 'text-sky-600', gradientFrom: 'from-sky-500', gradientTo: 'to-indigo-500' },
+            { icon: <GraduationCap size={12} />, label: '持续学习', position: 'bottom-10', animation: 'animate-float-delayed', textColor: 'text-indigo-600', gradientFrom: 'from-indigo-500', gradientTo: 'to-purple-500' },
+          ]}
+        />
       }
     >
       {/* 从书中升起的灯泡（上方漂浮） */}
@@ -55,20 +47,22 @@ export default function KnowledgeIllustration() {
         </g>
       </g>
 
-      {/* 中央：翻开的图书（大主体） */}
+      {/* 中央：翻开的图书（大主体，缓缓漂浮） */}
       <g transform="translate(200,238)">
-        {/* 左页 */}
-        <path d="M -2 -14 C -24 -32 -64 -28 -78 -6 L -78 34 C -62 24 -30 24 -2 30 Z" fill="#ffffff" stroke="#7dd3fc" strokeWidth="3" strokeLinejoin="round" />
-        {/* 右页 */}
-        <path d="M 2 -14 C 24 -32 64 -28 78 -6 L 78 34 C 62 24 30 24 2 30 Z" fill="#f0f9ff" stroke="#7dd3fc" strokeWidth="3" strokeLinejoin="round" />
-        {/* 书脊 */}
-        <line x1="0" y1="-20" x2="0" y2="30" stroke="#0284c7" strokeWidth="5" strokeLinecap="round" />
-        {/* 左页文字 */}
-        <path d="M -52 0 h 22 M -56 10 h 30 M -48 20 h 20" stroke="#bae6fd" strokeWidth="3" strokeLinecap="round" />
-        {/* 右页文字 */}
-        <path d="M 18 0 h 32 M 12 10 h 38 M 14 20 h 26" stroke="#bae6fd" strokeWidth="3" strokeLinecap="round" />
-        {/* 飘起的书页 */}
-        <path d="M -46 -26 l 14 -10 M 40 -22 l -10 -12" stroke="#7dd3fc" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+        <g className="animate-float" style={{ animationDelay: '0.3s' }}>
+          {/* 左页 */}
+          <path d="M -2 -14 C -24 -32 -64 -28 -78 -6 L -78 34 C -62 24 -30 24 -2 30 Z" fill="#ffffff" stroke="#7dd3fc" strokeWidth="3" strokeLinejoin="round" />
+          {/* 右页 */}
+          <path d="M 2 -14 C 24 -32 64 -28 78 -6 L 78 34 C 62 24 30 24 2 30 Z" fill="#f0f9ff" stroke="#7dd3fc" strokeWidth="3" strokeLinejoin="round" />
+          {/* 书脊 */}
+          <line x1="0" y1="-20" x2="0" y2="30" stroke="#0284c7" strokeWidth="5" strokeLinecap="round" />
+          {/* 左页文字 */}
+          <path d="M -52 0 h 22 M -56 10 h 30 M -48 20 h 20" stroke="#bae6fd" strokeWidth="3" strokeLinecap="round" />
+          {/* 右页文字 */}
+          <path d="M 18 0 h 32 M 12 10 h 38 M 14 20 h 26" stroke="#bae6fd" strokeWidth="3" strokeLinecap="round" />
+          {/* 飘起的书页 */}
+          <path d="M -46 -26 l 14 -10 M 40 -22 l -10 -12" stroke="#7dd3fc" strokeWidth="3" strokeLinecap="round" opacity="0.7" />
+        </g>
       </g>
 
       {/* 右下角小书堆 */}

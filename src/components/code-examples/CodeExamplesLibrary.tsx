@@ -5,9 +5,11 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowUpRight, Boxes, Github, Search, SearchX } from 'lucide-react'
+import { ArrowUpRight, Boxes, Github, SearchX } from 'lucide-react'
 import CodeFlowCard from '@/components/sections/CodeFlowCard'
 import Footer from '@/components/ui/Footer'
+import SearchInput from '@/components/ui/SearchInput'
+import Pagination from '@/components/ui/Pagination'
 import type { CodeFlowItem } from '@/lib/code-examples-types'
 
 /** 每页最多展示条数（与知识库/论文库一致） */
@@ -61,18 +63,15 @@ export default function CodeExamplesLibrary({ items }: { items: CodeFlowItem[] }
 
           {/* ═══ 检索栏 ═══ */}
           <div className="glass-card rounded-2xl p-5">
-            <div className="relative">
-              <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value)
-                  setPage(1)
-                }}
-                placeholder="搜索业务流、技术栈或标签…"
-                className="w-full pl-10 pr-4 py-2.5 rounded-full border border-slate-200 bg-white/80 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-fuchsia-400/40 focus:border-fuchsia-400 transition-all"
-              />
-            </div>
+            <SearchInput
+              value={query}
+              onChange={(v) => {
+                setQuery(v)
+                setPage(1)
+              }}
+              placeholder="搜索业务流、技术栈或标签…"
+              accent="fuchsia"
+            />
             <p className="mt-3 text-xs text-slate-400">
               共 {filtered.length} 个业务流 · 每页最多 {PER_PAGE} 个 · 按最近更新倒序
             </p>
@@ -107,47 +106,7 @@ export default function CodeExamplesLibrary({ items }: { items: CodeFlowItem[] }
               )}
 
               {/* ═══ 分页 ═══ */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2 mt-8">
-                  <button
-                    type="button"
-                    onClick={() => goPage(safePage - 1)}
-                    disabled={safePage <= 1}
-                    className="px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:text-fuchsia-600 hover:border-fuchsia-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    上一页
-                  </button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
-                    .map((p, idx, arr) => {
-                      const prev = arr[idx - 1]
-                      return (
-                        <span key={p} className="flex items-center gap-2">
-                          {prev != null && p - prev > 1 && <span className="text-slate-400">…</span>}
-                          <button
-                            type="button"
-                            onClick={() => goPage(p)}
-                            className={`h-9 w-9 rounded-full text-sm transition-all ${
-                              p === safePage
-                                ? 'bg-gradient-to-br from-fuchsia-600 to-violet-600 text-white shadow-md shadow-fuchsia-500/25'
-                                : 'text-slate-600 hover:text-fuchsia-600 hover:bg-fuchsia-50'
-                            }`}
-                          >
-                            {p}
-                          </button>
-                        </span>
-                      )
-                    })}
-                  <button
-                    type="button"
-                    onClick={() => goPage(safePage + 1)}
-                    disabled={safePage >= totalPages}
-                    className="px-4 py-2 rounded-full border border-slate-200 text-sm text-slate-600 hover:text-fuchsia-600 hover:border-fuchsia-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    下一页
-                  </button>
-                </div>
-              )}
+              <Pagination page={safePage} totalPages={totalPages} onChange={goPage} accent="fuchsia" />
             </section>
 
             {/* ═══ 右侧：悬浮业务流预览浮窗（与论文/知识库一致的浮窗） ═══ */}
