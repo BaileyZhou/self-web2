@@ -75,6 +75,8 @@ export default function CardPager({
     // 首次进入某张卡片时按需挂载（先挂载再淡入，避免一直渲染全部 6 张卡片）
     setMounted((prev) => (prev.includes(index) ? prev : [...prev, index]))
     pager.setCurrentId(PAGES[index].id)
+    // 通知各卡片（Frontier 据此在切走时自动关闭预览弹窗，避免残留 dialog 锁定后续滚轮翻页）
+    window.dispatchEvent(new CustomEvent('pager:navigate', { detail: { id: PAGES[index].id } }))
     // 新卡片内容回到顶部
     const el = scrollRefs.current[index]
     if (el) el.scrollTop = 0
@@ -145,6 +147,8 @@ export default function CardPager({
         e.preventDefault()
         return
       }
+      // 预览弹窗（role=dialog）打开时锁定翻页：滚动只服务于弹窗内部，需关闭弹窗或点击导航栏切换
+      if (document.querySelector('[role="dialog"]')) return
       // 只在翻页容器内部滚动时接管，避免影响固定导航等区域
       if (!containerRef.current?.contains(e.target as Node)) return
 
@@ -179,6 +183,8 @@ export default function CardPager({
       const dy = e.changedTouches[0].clientY - touchStartY.current
       touchStartY.current = null
       if (busyRef.current || Math.abs(dy) < 40) return
+      // 预览弹窗打开时锁定触摸翻页
+      if (document.querySelector('[role="dialog"]')) return
       const el = scrollRefs.current[currentRef.current]
       if (dy < 0) {
         if (el && el.scrollTop + el.clientHeight < el.scrollHeight - 4) return

@@ -23,12 +23,15 @@ export default function FloatingChips({
   side = 'right',
   chips,
   sparkleColor,
+  showSparkle = true,
 }: {
   /** 徽章外露所在侧：'right' → 靠右（-right-2 sm:right-0），'left' → 靠左 */
   side?: 'left' | 'right'
   chips: FloatingChip[]
   /** 中间星星颜色，如 'text-sky-500' */
   sparkleColor: string
+  /** 是否显示中间星星（默认 true；左右分列时可在其中一侧关闭） */
+  showSparkle?: boolean
 }) {
   const edge = side === 'right' ? '-right-2 sm:right-0' : '-left-2 sm:left-0'
   const sparkleEdge = side === 'right' ? '-right-4' : '-left-4'
@@ -47,11 +50,13 @@ export default function FloatingChips({
           {c.label}
         </div>
       ))}
-      <div
-        className={`absolute top-1/2 ${sparkleEdge} hidden sm:flex animate-wiggle glass-card rounded-full p-2 ${sparkleColor} shadow-md`}
-      >
-        <Sparkles size={14} />
-      </div>
+      {showSparkle && (
+        <div
+          className={`absolute top-1/2 ${sparkleEdge} hidden sm:flex animate-wiggle glass-card rounded-full p-2 ${sparkleColor} shadow-md`}
+        >
+          <Sparkles size={14} />
+        </div>
+      )}
     </>
   )
 }
