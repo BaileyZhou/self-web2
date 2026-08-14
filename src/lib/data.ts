@@ -60,6 +60,8 @@ export const nav = {
     { label: '项目', href: '#projects' },
     /** “知识库”区块锚点 */
     { label: '知识库', href: '#experience' },
+    /** “学术前沿”区块锚点（神经科学/心理学/脑科学最新文献，每日自动更新） */
+    { label: '学术前沿', href: '#frontier' },
     /** “论文阅读”区块锚点 */
     { label: '论文', href: '#papers' },
     /** “代码案例”区块锚点 */

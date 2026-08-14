@@ -6,7 +6,7 @@ interface SectionProps {
   id?: string
   className?: string
   /** 主题色：每个模块用同色系但略有差异的柔光，保持统一又避免单调 */
-  variant?: 'indigo' | 'violet' | 'sky' | 'rose' | 'fuchsia'
+  variant?: 'indigo' | 'violet' | 'sky' | 'rose' | 'fuchsia' | 'teal'
   children: ReactNode
 }
 
@@ -41,6 +41,12 @@ const variantStyles = {
     orb2: 'from-violet-200/30 to-fuchsia-200/20',
     grid: 'rgba(217,70,239,0.05)',
     hairline: 'from-fuchsia-500/40 via-purple-500/30 to-transparent',
+  },
+  teal: {
+    orb1: 'from-teal-300/30 to-cyan-300/20',
+    orb2: 'from-emerald-200/30 to-teal-200/20',
+    grid: 'rgba(45,212,191,0.05)',
+    hairline: 'from-teal-500/40 via-cyan-500/30 to-transparent',
   },
 }
 

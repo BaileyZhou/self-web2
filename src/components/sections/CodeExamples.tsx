@@ -35,7 +35,7 @@ export default function CodeExamples({ items = [] }: { items?: CodeFlowItem[] })
           title={codeExamples.title}
           subtitle={codeExamples.subtitle}
           badge={codeExamples.badge}
-          index="05"
+          index="06"
         />
 
         <LayeredContent illustration={<CodeIllustration />} className="mt-8" side="right">

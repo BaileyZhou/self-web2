@@ -9,6 +9,7 @@ export const PAGER_PAGE_IDS = [
   'about',
   'projects',
   'experience',
+  'frontier',
   'papers',
   'code-examples',
 ] as const

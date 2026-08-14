@@ -9,6 +9,7 @@ import Hero from '@/components/sections/Hero'
 import About from '@/components/sections/About'
 import Projects from '@/components/sections/Projects'
 import Experience from '@/components/sections/Experience'
+import Frontier from '@/components/sections/Frontier'
 import Papers from '@/components/sections/Papers'
 import CodeExamples from '@/components/sections/CodeExamples'
 import Footer from '@/components/ui/Footer'
@@ -55,6 +56,7 @@ export default function CardPager({
         { id: 'about', Comp: About, showFooter: true },
         { id: 'projects', Comp: Projects, showFooter: true },
         { id: 'experience', Comp: Experience, showFooter: true, items: experienceItems },
+        { id: 'frontier', Comp: Frontier, showFooter: true },
         { id: 'papers', Comp: Papers, showFooter: true, items: papersItems },
         { id: 'code-examples', Comp: CodeExamples, showFooter: true, items: codeFlowItems },
       ] as const,

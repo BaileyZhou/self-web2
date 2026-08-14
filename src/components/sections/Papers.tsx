@@ -40,7 +40,7 @@ export default function Papers({
           title={papers.title}
           subtitle={papers.subtitle}
           badge={papers.badge}
-          index="04"
+          index="05"
         />
 
         <LayeredContent illustration={<PapersIllustration />} className="mt-8" side="left">
