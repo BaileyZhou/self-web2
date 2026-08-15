@@ -36,8 +36,8 @@ const COUNT = 6
 const PER_TOPIC = 25
 /** 本地缓存键前缀（实际键为 frontier-v3-YYYY-MM-DD，按自然日换新） */
 const CACHE_KEY = 'frontier-v3'
-/** 请求超时（毫秒）：网络不可用时快速进入错误态，而非一直显示骨架 */
-const TIMEOUT_MS = 12000
+/** 请求超时（毫秒）：网络不可用时快速进入错误态 / 回退，避免首载长时间停在骨架 */
+const TIMEOUT_MS = 6000
 
 /** 关注方向：每个方向一套检索式（PubMed / OpenAlex） */
 const TOPICS = [

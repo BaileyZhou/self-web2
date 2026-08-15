@@ -3,8 +3,17 @@
 
 import { useEffect, useRef } from 'react'
 
-export default function NeuronBackground({ rgb = '99,102,241' }: { rgb?: string }) {
+export default function NeuronBackground({
+  rgb = '99,102,241',
+  paused = false,
+}: {
+  rgb?: string
+  /** 暂停动画（首帧前 / 页面隐藏时），降低主线程占用 */
+  paused?: boolean
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -16,7 +25,8 @@ export default function NeuronBackground({ rgb = '99,102,241' }: { rgb?: string 
     let width = window.innerWidth
     let height = window.innerHeight
     let particles: Particle[] = []
-    let animationId: number
+    let animationId = 0
+    let running = false
 
     const resize = () => {
       width = window.innerWidth
@@ -87,27 +97,44 @@ export default function NeuronBackground({ rgb = '99,102,241' }: { rgb?: string 
       }
     }
 
-    function animate() {
-      if (!ctx) return
+    function loop() {
+      if (!running) return
       ctx.clearRect(0, 0, width, height)
       particles.forEach((p) => {
         p.update()
         p.draw()
       })
       drawLines()
-      animationId = requestAnimationFrame(animate)
+      animationId = requestAnimationFrame(loop)
+    }
+
+    // 是否该运行动画：未暂停 且 页面可见
+    const shouldRun = () => !pausedRef.current && !document.hidden
+    const sync = () => {
+      if (shouldRun()) {
+        if (!running) {
+          running = true
+          loop()
+        }
+      } else {
+        running = false
+        cancelAnimationFrame(animationId)
+      }
     }
 
     resize()
-    animate()
-
+    sync()
+    // 页面切换隐藏/显示时启停动画
+    document.addEventListener('visibilitychange', sync)
     window.addEventListener('resize', resize)
 
     return () => {
-      window.removeEventListener('resize', resize)
+      running = false
       cancelAnimationFrame(animationId)
+      document.removeEventListener('visibilitychange', sync)
+      window.removeEventListener('resize', resize)
     }
-  }, [rgb])
+  }, [rgb, paused])
 
   return <canvas ref={canvasRef} className="w-full h-full opacity-40" />
 }

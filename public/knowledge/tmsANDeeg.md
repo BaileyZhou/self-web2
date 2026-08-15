@@ -3,7 +3,7 @@ title: TMS与EEG常见联用方式
 category: 神经调控
 summary: TMS与EEG联用方式常见为两种：TMS向EEG设备发送Marker信号；EEG设备向TMS发送控制信号。
 tags: [TMS, 神经调控, EEG, 脑机接口]
-updated: 2026-08-13
+updated: "2026-08-13"
 intro: TMS设备虽作为干预设备，但决不能是封闭平台。
 ---
 

@@ -25,6 +25,17 @@
 //     ---
 //     正文（支持 Markdown）：## 标题、- 列表、**加粗**、> 引用
 //
+//  ⭐ 论文 → 知识库 一键沉淀：在正文中用「知识卡片函数」框选内容，运行
+//     `npm run sync:cards`（dev / build 前会自动执行），会自动在知识库生成卡片，
+//     并把论文里的函数块替换成一个指向该卡片的链接（网页只看到链接）：
+//
+//     <!-- knowledge-card:start id="brain-plasticity" title="神经可塑性" category="论文精读" tags="突触,学习记忆" -->
+//     这里放你框选的、要沉淀为知识卡片的内容（支持 Markdown）……
+//     <!-- knowledge-card:end -->
+//
+//     属性均可选（除内容外）：id（卡片id，缺省由 title 生成）/ title / category /
+//     tags（逗号分隔）/ summary / updated。详见 scripts/sync-paper-knowledge.mjs。
+//
 //  ⚠️ 本模块使用 Node fs，只能在服务端组件（page 等）中使用，
 //     客户端组件请通过 props 接收数据，不要直接 import 本模块。
 import 'server-only'

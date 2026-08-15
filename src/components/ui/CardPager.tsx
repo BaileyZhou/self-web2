@@ -90,6 +90,24 @@ export default function CardPager({
     }, TRANSITION_MS)
   }, [PAGES])
 
+  // 直接跳转（用于首次加载的深链定位）：不经过 busyRef 过渡锁，也不触发淡入淡出——
+  // 首载直接显示目标卡片，让滚轮/导航立刻可用（避免首载期间输入被 740ms 锁忽略，感觉卡死）
+  const jumpTo = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= PAGES.length) return
+      currentRef.current = index
+      setCurrent(index)
+      setLeaving(null)
+      setPhase(null)
+      setMounted((prev) => (prev.includes(index) ? prev : [...prev, index]))
+      pager.setCurrentId(PAGES[index].id)
+      window.dispatchEvent(new CustomEvent('pager:navigate', { detail: { id: PAGES[index].id } }))
+      const el = scrollRefs.current[index]
+      if (el) el.scrollTop = 0
+    },
+    [PAGES]
+  )
+
   // 挂载：锁定页面滚动、注册到全局 pager、处理初始 hash（如 /#experience）
   useEffect(() => {
     const prevBody = document.body.style.overflow
@@ -99,31 +117,33 @@ export default function CardPager({
 
     pager.register((id) => {
       const idx = PAGES.findIndex((p) => p.id === id)
-      if (idx >= 0) goTo(idx)
+      if (idx >= 0) goTo(idx) // 用户导航（导航栏/进度点/Hero 按钮）：保留淡入淡出过渡
     })
 
     // 处理地址栏 hash：深链接（/#about 等）、冷加载时 hash 延迟设置、以及浏览器前进/后退
-    const goToHash = () => {
+    // 首次挂载用 jumpTo（直接定位，不锁输入）；之后的前进/后退 hashchange 用 goTo（淡入淡出过渡）
+    const goToHash = (initial = false) => {
       const hash = window.location.hash.replace('#', '')
       const idx = PAGES.findIndex((p) => p.id === hash)
       if (idx > 0) {
-        goTo(idx)
+        if (initial) jumpTo(idx)
+        else goTo(idx)
       } else if (!hash) {
         // 无深链接时以首页为基线：清除上次会话残留的 currentId，
         // 避免从其它页面返回时导航高亮（如“知识库”）与可见卡片（首页）失步。
         pager.resetToHero()
       }
     }
-    goToHash()
-    window.addEventListener('hashchange', goToHash)
+    goToHash(true)
+    window.addEventListener('hashchange', () => goToHash(false))
 
     return () => {
       pager.unregister()
-      window.removeEventListener('hashchange', goToHash)
+      window.removeEventListener('hashchange', () => goToHash(false))
       document.body.style.overflow = prevBody
       document.documentElement.style.overflow = prevHtml
     }
-  }, [goTo])
+  }, [goTo, jumpTo])
 
   // 键盘翻页（PageDown/PageUp）
   useEffect(() => {
