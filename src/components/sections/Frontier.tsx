@@ -1,7 +1,9 @@
 // src/components/sections/Frontier.tsx
 // 「学术前沿」区块（首页）：自动从网络获取神经科学 / 心理学 / 脑科学的最新文献卡片。
 // 无需手动更新——打开页面时自动拉取 PubMed（失败自动回退 OpenAlex），
-// 结果缓存到 localStorage（每天更新一次）。
+// 结果缓存到 localStorage（按访客本地日期每天更新一次，0 点换新）。
+// 说明：NCBI 限流 3 req/s，拉取已改为串行 + 重试，避免候选池因偶发失败而缩水/倾斜；
+// 中文翻译走 MyMemory（Google 免费接口国内不可达）。
 // 每张卡片带「推荐理由」（按你关注的 神经科学/心理学/脑科学 方向标注），
 // 点击卡片弹出预览窗，查看完整标题、作者、来源与摘要；「查看原文」跳转 PubMed。
 'use client'
@@ -79,37 +81,83 @@ function isTopJournal(name: string): boolean {
   )
 }
 
-/** 带超时的 fetch */
-async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
+/** 带超时的 fetch（外部 signal 可一并中止，避免组件卸载后请求仍在后台跑） */
+async function fetchWithTimeout(url: string, ms: number, signal?: AbortSignal): Promise<Response> {
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), ms)
+  const onAbort = () => ctrl.abort()
+  signal?.addEventListener('abort', onAbort)
   try {
     return await fetch(url, { signal: ctrl.signal })
   } finally {
     clearTimeout(timer)
+    signal?.removeEventListener('abort', onAbort)
   }
 }
 
-/** 从 PubMed E-utilities 拉取（每个方向 esearch → 汇总 esummary，带推荐理由标注） */
-async function fetchPubmed(): Promise<{ items: FrontierItem[]; source: string }> {
-  const settled = await Promise.allSettled(
-    TOPICS.map(async (t) => {
+/** 带重试的 fetch：NCBI / OpenAlex 偶发限流或 5xx，指数间隔重试 */
+async function fetchWithRetry(
+  url: string,
+  signal?: AbortSignal,
+  attempts = 3,
+  baseDelayMs = 500
+): Promise<Response> {
+  let lastErr: unknown
+  for (let i = 0; i < attempts; i++) {
+    if (signal?.aborted) throw new Error('aborted')
+    try {
+      const res = await fetchWithTimeout(url, TIMEOUT_MS, signal)
+      if (res.ok) return res
+      lastErr = new Error(`HTTP ${res.status}`)
+    } catch (e) {
+      if (signal?.aborted) throw e
+      lastErr = e
+    }
+    if (i < attempts - 1) await new Promise((r) => setTimeout(r, baseDelayMs * (i + 1)))
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('fetch failed')
+}
+
+/** 字符串确定性哈希（用于 OpenAlex 缺 id 时的稳定兜底 id，避免 Math.random 破坏同日同结果） */
+function hashStr(s: string): string {
+  let h = 0
+  for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return h.toString(36)
+}
+
+/** 当天日期键（YYYY-MM-DD，按访客本地时区）：国内 0 点准时换新一批文献 */
+function todayKey(): string {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`
+}
+
+/** 从 PubMed E-utilities 拉取（每个方向 esearch → 汇总 esummary，带推荐理由标注）。
+ *  串行请求 + 重试：NCBI 无 key 限流 3 req/s，此前并发发 3 个 esearch + 1 个 esummary
+ *  偶发被限流，静默吞掉失败后候选池变小/只剩单方向，正是「不同终端内容不一致」的残余原因。 */
+async function fetchPubmed(signal?: AbortSignal): Promise<{ items: FrontierItem[]; source: string }> {
+  // 1) 逐方向串行 esearch（带间隔，低于 3 req/s 限流线；单个方向失败只跳过该方向）
+  const topicResults: { topic: string; ids: string[] }[] = []
+  for (const t of TOPICS) {
+    if (signal?.aborted) throw new Error('aborted')
+    try {
       const url = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=${encodeURIComponent(
         `(${t.pubmed}) AND (${JOURNAL_TA})`
       )}&retmax=${PER_TOPIC}&sort=pub_date&retmode=json`
-      const res = await fetchWithTimeout(url, TIMEOUT_MS)
-      if (!res.ok) throw new Error('PubMed esearch failed')
+      const res = await fetchWithRetry(url, signal)
       const json = await res.json()
-      return { topic: t.label, ids: (json.esearchresult?.idlist ?? []) as string[] }
-    })
-  )
-  const topicResults = settled
-    .filter(
-      (s): s is PromiseFulfilledResult<{ topic: string; ids: string[] }> => s.status === 'fulfilled'
-    )
-    .map((s) => s.value)
+      const ids = (json.esearchresult?.idlist ?? []) as string[]
+      if (ids.length) topicResults.push({ topic: t.label, ids })
+      else console.warn(`[Frontier] PubMed「${t.label}」无结果`)
+    } catch (e) {
+      if (signal?.aborted) throw e
+      console.warn(`[Frontier] PubMed「${t.label}」检索失败，跳过该方向:`, e)
+    }
+  }
+  if (!topicResults.length) throw new Error('PubMed returned no results')
 
-  // 按方向交错合并去重（保证三个方向都有覆盖）
+  // 2) 按方向交错合并去重（保证三个方向都有覆盖）
   const topicOf: Record<string, string> = {}
   const groups: string[][] = []
   const seen = new Set<string>()
@@ -126,12 +174,24 @@ async function fetchPubmed(): Promise<{ items: FrontierItem[]; source: string }>
   const ids = interleave(groups, PER_TOPIC * TOPICS.length)
   if (!ids.length) throw new Error('PubMed returned no results')
 
+  // 3) esummary 拉取元数据：返回 200 但 result 为空是限流的典型特征，需整体重试
   const esummary = `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&id=${ids.join(
     ','
   )}&retmode=json`
-  const res2 = await fetchWithTimeout(esummary, TIMEOUT_MS)
-  if (!res2.ok) throw new Error('PubMed esummary failed')
-  const json2 = await res2.json()
+  let json2: any = null
+  for (let i = 0; i < 3; i++) {
+    if (signal?.aborted) throw new Error('aborted')
+    const res2 = await fetchWithTimeout(esummary, TIMEOUT_MS, signal)
+    if (res2.ok) {
+      const j = await res2.json()
+      if (j?.result && ids.some((id) => j.result[id])) {
+        json2 = j
+        break
+      }
+    }
+    if (i < 2) await new Promise((r) => setTimeout(r, 800 * (i + 1)))
+  }
+  if (!json2) throw new Error('PubMed esummary failed')
 
   const items: FrontierItem[] = ids
     .map((id) => {
@@ -158,32 +218,35 @@ async function fetchPubmed(): Promise<{ items: FrontierItem[]; source: string }>
   return { items: selectDaily(topItems, TOPICS.map((t) => t.label)), source: 'PubMed' }
 }
 
-/** 从 OpenAlex 拉取（PubMed 不可用时的自动兜底，CORS 友好、无需 key；含摘要） */
-async function fetchOpenAlex(): Promise<{ items: FrontierItem[]; source: string }> {
-  const settled = await Promise.allSettled(
-    TOPICS.map(async (t) => {
+/** 从 OpenAlex 拉取（PubMed 不可用时的自动兜底，CORS 友好、无需 key；含摘要）。
+ *  同样改为串行 + 重试，单个方向失败只跳过该方向。 */
+async function fetchOpenAlex(signal?: AbortSignal): Promise<{ items: FrontierItem[]; source: string }> {
+  const topicResults: { topic: string; works: Record<string, any>[] }[] = []
+  for (const t of TOPICS) {
+    if (signal?.aborted) throw new Error('aborted')
+    try {
       const url = `https://api.openalex.org/works?filter=${encodeURIComponent(
         `${t.openalex},locations.source.id:${OPENALEX_SOURCE_IDS}`
       )}&sort=publication_date:desc&per-page=${PER_TOPIC}`
-      const res = await fetchWithTimeout(url, TIMEOUT_MS)
-      if (!res.ok) throw new Error('OpenAlex failed')
+      const res = await fetchWithRetry(url, signal, 2)
       const json = await res.json()
-      return { topic: t.label, works: (json.results ?? []) as Record<string, any>[] }
-    })
-  )
-  const topicResults = settled
-    .filter(
-      (s): s is PromiseFulfilledResult<{ topic: string; works: Record<string, any>[] }> =>
-        s.status === 'fulfilled'
-    )
-    .map((s) => s.value)
+      const works = (json.results ?? []) as Record<string, any>[]
+      if (works.length) topicResults.push({ topic: t.label, works })
+      else console.warn(`[Frontier] OpenAlex「${t.label}」无结果`)
+    } catch (e) {
+      if (signal?.aborted) throw e
+      console.warn(`[Frontier] OpenAlex「${t.label}」拉取失败，跳过该方向:`, e)
+    }
+  }
+  if (!topicResults.length) throw new Error('OpenAlex failed')
 
   const groups: FrontierItem[][] = []
   const seen = new Set<string>()
   for (const r of topicResults) {
     const g: FrontierItem[] = []
     for (const w of r.works) {
-      const id = w.id ?? `oa-${g.length}-${Math.random()}`
+      // id 兜底用确定性哈希（主题+标题），避免 Math.random 破坏「同日同结果」
+      const id = w.id ?? `oa-${hashStr(`${r.topic}|${w.display_name ?? ''}`)}`
       if (seen.has(id)) continue
       seen.add(id)
       g.push({
@@ -249,7 +312,7 @@ function interleave<T>(groups: T[][], max: number): T[] {
  *  其余条目的相对顺序不变，当日结果仍一致。 */
 function pickDaily<T extends { id: string }>(items: T[], count: number, seedKey: string): T[] {
   if (items.length <= count) return items
-  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD（UTC，全终端一致）
+  const today = todayKey() // YYYY-MM-DD（本地时区，国内 0 点换新）
   const scored = items.map((it) => {
     let seed = 0
     const key = `${today}|${seedKey}|${it.id ?? ''}`
@@ -294,17 +357,19 @@ function selectDaily(items: FrontierItem[], topics: string[], count: number = CO
   return out.slice(0, count)
 }
 
-/** 免费 Google Translate 接口：把文本翻译成中文（返回译文） */
+/** 免费翻译接口（MyMemory）：把英文摘要翻译成中文。
+ *  此前用 Google 免费接口（translate.googleapis.com），国内网络不可达导致翻译永远失败；
+ *  MyMemory 无需 key、支持 CORS、国内可达；有每日免费额度，超限时优雅降级为「翻译暂不可用」。 */
 async function translateText(text: string): Promise<string> {
-  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=${encodeURIComponent(
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(
     text
-  )}`
-  const res = await fetch(url)
+  )}&langpair=en|zh-CN`
+  const res = await fetchWithTimeout(url, TIMEOUT_MS)
   if (!res.ok) throw new Error('translate failed')
-  const data = (await res.json()) as unknown[][][]
-  return (data?.[0] ?? [])
-    .map((seg) => (seg?.[0] ?? '') as string)
-    .join('')
+  const data = (await res.json()) as { responseData?: { translatedText?: string } }
+  const zh = data.responseData?.translatedText?.trim()
+  if (!zh) throw new Error('translate returned empty')
+  return zh
 }
 
 /** 懒加载 PubMed 摘要（efetch XML → 提取 AbstractText） */
@@ -320,12 +385,13 @@ async function fetchPubmedAbstract(pmid: string): Promise<string> {
   return parts.join(' ').trim()
 }
 
-/** 拉取（PubMed 优先，失败自动回退 OpenAlex） */
-async function loadFromNetwork(): Promise<{ items: FrontierItem[]; source: string }> {
+/** 拉取（PubMed 优先，失败自动回退 OpenAlex；中途被中止则直接抛错，不再发起兜底请求） */
+async function loadFromNetwork(signal?: AbortSignal): Promise<{ items: FrontierItem[]; source: string }> {
   try {
-    return await fetchPubmed()
-  } catch {
-    return await fetchOpenAlex()
+    return await fetchPubmed(signal)
+  } catch (e) {
+    if (signal?.aborted) throw e
+    return await fetchOpenAlex(signal)
   }
 }
 
@@ -387,9 +453,20 @@ export default function Frontier() {
   const load = useCallback(async () => {
     setStatus('loading')
 
-    // 优先使用本地缓存：缓存键带当天日期（frontier-v3-YYYY-MM-DD），
-    // 同一天内复用当天结果（不同终端同一天一致），自然日切换自动换新
-    const cacheKey = `${CACHE_KEY}-${new Date().toISOString().slice(0, 10)}`
+    // 缓存键带当天日期（frontier-v3-YYYY-MM-DD，本地时区）：同一天内复用当天结果，自然日切换自动换新
+    const cacheKey = `${CACHE_KEY}-${todayKey()}`
+    // 顺手清理历史缓存键（旧日期的 frontier-v3-* / 旧版 frontier-v2），避免 localStorage 无限累积
+    try {
+      const stale: string[] = []
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)
+        if (k && ((k.startsWith(`${CACHE_KEY}-`) && k !== cacheKey) || k === 'frontier-v2'))
+          stale.push(k)
+      }
+      stale.forEach((k) => localStorage.removeItem(k))
+    } catch {
+      /* 清理失败不影响展示 */
+    }
     try {
       const cached = localStorage.getItem(cacheKey)
       if (cached) {
@@ -408,7 +485,7 @@ export default function Frontier() {
     abortRef.current?.abort()
     abortRef.current = ac
     try {
-      const result = await loadFromNetwork()
+      const result = await loadFromNetwork(ac.signal)
       if (ac.signal.aborted) return
       try {
         localStorage.setItem(cacheKey, JSON.stringify({ fetchedAt: Date.now(), ...result }))
