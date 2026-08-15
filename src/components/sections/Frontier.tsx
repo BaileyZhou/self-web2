@@ -357,19 +357,68 @@ function selectDaily(items: FrontierItem[], topics: string[], count: number = CO
   return out.slice(0, count)
 }
 
+/** 把长文本切成 ≤450 字符的小段（优先在句子/标点/空格边界断开，避免在单词中间硬切） */
+function chunkText(text: string, maxLen = 450): string[] {
+  const chunks: string[] = []
+  let rest = text.trim()
+  while (rest.length > maxLen) {
+    let cut = maxLen
+    // 从 maxLen 往前找最近的边界（空格 / 常见标点），找不到则硬切
+    for (let i = maxLen; i > 280; i--) {
+      const ch = rest[i - 1]
+      if (
+        ch &&
+        (ch === ' ' ||
+          ch === ',' ||
+          ch === '.' ||
+          ch === '!' ||
+          ch === '?' ||
+          ch === ';' ||
+          ch === '\n' ||
+          ch === '。' ||
+          ch === '，' ||
+          ch === '！' ||
+          ch === '？' ||
+          ch === '；')
+      ) {
+        cut = i
+        break
+      }
+    }
+    const seg = rest.slice(0, cut).trim()
+    if (seg) chunks.push(seg)
+    rest = rest.slice(cut).trim()
+  }
+  if (rest) chunks.push(rest)
+  return chunks
+}
+
 /** 免费翻译接口（MyMemory）：把英文摘要翻译成中文。
- *  此前用 Google 免费接口（translate.googleapis.com），国内网络不可达导致翻译永远失败；
- *  MyMemory 无需 key、支持 CORS、国内可达；有每日免费额度，超限时优雅降级为「翻译暂不可用」。 */
+ *  单次查询限 500 字符——长摘要先分块逐段翻译再拼接；
+ *  注意 MyMemory 对超长/超限会返回 HTTP 200 + responseStatus 非 200，且把错误正文放进
+ *  translatedText（如 QUERY LENGTH LIMIT EXCEEDED），必须显式校验 responseStatus，避免把错误当译文。 */
 async function translateText(text: string): Promise<string> {
-  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(
-    text
-  )}&langpair=en|zh-CN`
-  const res = await fetchWithTimeout(url, TIMEOUT_MS)
-  if (!res.ok) throw new Error('translate failed')
-  const data = (await res.json()) as { responseData?: { translatedText?: string } }
-  const zh = data.responseData?.translatedText?.trim()
-  if (!zh) throw new Error('translate returned empty')
-  return zh
+  const parts = chunkText(text)
+  const results: string[] = []
+  for (const part of parts) {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(
+      part
+    )}&langpair=en|zh-CN`
+    const res = await fetchWithTimeout(url, TIMEOUT_MS)
+    if (!res.ok) throw new Error('translate failed')
+    const data = (await res.json()) as {
+      responseStatus?: number | string
+      responseData?: { translatedText?: string }
+    }
+    // 接口可能返回 HTTP 200 但业务状态非 200（超限/超长），此时 translatedText 是错误正文
+    if (data.responseStatus !== undefined && Number(data.responseStatus) !== 200) {
+      throw new Error('translate rejected')
+    }
+    const zh = data.responseData?.translatedText?.trim()
+    if (!zh) throw new Error('translate returned empty')
+    results.push(zh)
+  }
+  return results.join('')
 }
 
 /** 懒加载 PubMed 摘要（efetch XML → 提取 AbstractText） */
