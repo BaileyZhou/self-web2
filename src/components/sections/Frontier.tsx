@@ -30,12 +30,10 @@ interface FrontierItem {
 
 /** 首页展示条数 */
 const COUNT = 6
-/** 每个方向预取条数（经顶刊过滤后仍能截取到 COUNT 条） */
-const PER_TOPIC = 10
-/** 本地缓存键（v2：条目新增 topic/abstract 字段） */
-const CACHE_KEY = 'frontier-v2'
-/** 缓存有效期：每天更新一次 */
-const TTL = 24 * 60 * 60 * 1000
+/** 每个方向预取条数：加大候选池，供「按天确定性挑选」选出当日文献（不同终端同一天结果一致） */
+const PER_TOPIC = 25
+/** 本地缓存键前缀（实际键为 frontier-v3-YYYY-MM-DD，按自然日换新） */
+const CACHE_KEY = 'frontier-v3'
 /** 请求超时（毫秒）：网络不可用时快速进入错误态，而非一直显示骨架 */
 const TIMEOUT_MS = 12000
 
@@ -154,10 +152,10 @@ async function fetchPubmed(): Promise<{ items: FrontierItem[]; source: string }>
       }
     })
     .filter(Boolean) as FrontierItem[]
-  // 顶刊限定：只保留顶级期刊的文献
+  // 顶刊限定：只保留顶级期刊的文献，再按「日期确定性挑选」选出当日 6 篇（同一天不同终端结果一致）
   const topItems = items.filter((it) => isTopJournal(it.source))
   if (!topItems.length) throw new Error('EMPTY_TOP')
-  return { items: topItems.slice(0, COUNT), source: 'PubMed' }
+  return { items: selectDaily(topItems, TOPICS.map((t) => t.label)), source: 'PubMed' }
 }
 
 /** 从 OpenAlex 拉取（PubMed 不可用时的自动兜底，CORS 友好、无需 key；含摘要） */
@@ -205,10 +203,10 @@ async function fetchOpenAlex(): Promise<{ items: FrontierItem[]; source: string 
     if (g.length) groups.push(g)
   }
   const items = interleave(groups, PER_TOPIC * TOPICS.length)
-  // 顶刊限定：只保留顶级期刊的文献
+  // 顶刊限定：只保留顶级期刊的文献，再按「日期确定性挑选」选出当日 6 篇
   const topItems = items.filter((it) => isTopJournal(it.source))
   if (!topItems.length) throw new Error('EMPTY_TOP')
-  return { items: topItems.slice(0, COUNT), source: 'OpenAlex' }
+  return { items: selectDaily(topItems, TOPICS.map((t) => t.label)), source: 'OpenAlex' }
 }
 
 /** 重建 OpenAlex 摘要（abstract_inverted_index 是词→位置倒排索引） */
@@ -244,6 +242,56 @@ function interleave<T>(groups: T[][], max: number): T[] {
     i++
   }
   return out
+}
+
+/** 确定性挑选：每篇按「当天 UTC 日期 + 种子键 + id」计算确定性哈希分，按分排序取前 count。
+ *  相比「种子洗牌」，哈希分排序对候选池变化更稳定——不同终端/不同抓取时间即使池子差几篇，
+ *  其余条目的相对顺序不变，当日结果仍一致。 */
+function pickDaily<T extends { id: string }>(items: T[], count: number, seedKey: string): T[] {
+  if (items.length <= count) return items
+  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD（UTC，全终端一致）
+  const scored = items.map((it) => {
+    let seed = 0
+    const key = `${today}|${seedKey}|${it.id ?? ''}`
+    for (const ch of key) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0
+    return { it, score: seed }
+  })
+  scored.sort((a, b) => a.score - b.score || String(a.it.id).localeCompare(String(b.it.id)))
+  return scored.slice(0, count).map((s) => s.it)
+}
+
+/** 按日期从顶刊候选池中确定性挑选每日 6 篇（每个方向 2 篇，不足则从剩余补齐）。
+ *  修复：此前各终端各自 slice 前 N 条，导致不同终端/不同抓取时间显示内容不一致。 */
+function selectDaily(items: FrontierItem[], topics: string[], count: number = COUNT): FrontierItem[] {
+  const byTopic = new Map<string, FrontierItem[]>()
+  for (const it of items) {
+    const key = topics.includes(it.topic) ? it.topic : (topics[0] ?? '神经科学')
+    const arr = byTopic.get(key) ?? []
+    arr.push(it)
+    byTopic.set(key, arr)
+  }
+  const picked = new Set<string>()
+  const out: FrontierItem[] = []
+  const perTopic = Math.max(1, Math.floor(count / topics.length))
+  for (const topic of topics) {
+    const group = (byTopic.get(topic) ?? []).sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+    for (const it of pickDaily(group, perTopic, topic)) {
+      if (!picked.has(it.id)) {
+        picked.add(it.id)
+        out.push(it)
+      }
+    }
+  }
+  if (out.length < count) {
+    const rest = items
+      .filter((it) => !picked.has(it.id))
+      .sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+    for (const it of pickDaily(rest, count - out.length, 'fill')) {
+      picked.add(it.id)
+      out.push(it)
+    }
+  }
+  return out.slice(0, count)
 }
 
 /** 免费 Google Translate 接口：把文本翻译成中文（返回译文） */
@@ -339,17 +387,14 @@ export default function Frontier() {
   const load = useCallback(async () => {
     setStatus('loading')
 
-    // 优先使用本地缓存（每天更新一次，避免每次打开都请求）
+    // 优先使用本地缓存：缓存键带当天日期（frontier-v3-YYYY-MM-DD），
+    // 同一天内复用当天结果（不同终端同一天一致），自然日切换自动换新
+    const cacheKey = `${CACHE_KEY}-${new Date().toISOString().slice(0, 10)}`
     try {
-      const cached = localStorage.getItem(CACHE_KEY)
+      const cached = localStorage.getItem(cacheKey)
       if (cached) {
         const c = JSON.parse(cached)
-        if (
-          c.fetchedAt &&
-          Date.now() - c.fetchedAt < TTL &&
-          Array.isArray(c.items) &&
-          c.items.length
-        ) {
+        if (Array.isArray(c.items) && c.items.length) {
           setData({ items: c.items, source: c.source || 'PubMed' })
           setStatus('ready')
           return
@@ -366,7 +411,7 @@ export default function Frontier() {
       const result = await loadFromNetwork()
       if (ac.signal.aborted) return
       try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), ...result }))
+        localStorage.setItem(cacheKey, JSON.stringify({ fetchedAt: Date.now(), ...result }))
       } catch {
         /* 存储失败不影响展示 */
       }
