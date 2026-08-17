@@ -6,9 +6,7 @@ tags:
   - 突触
   - 学习记忆
 updated: '2026-08-15'
-source: >-
-  Real-Time Brain-State-Coupled Corticocortical Paired Associative Stimulation
-  of Cognitive Networks
+source: brain-state-coupled-pas
 ---
 ## 概念
 状态门控学习规则(state-gated learning rules)：突触可塑性的诱导和表达不仅仅取决于神经元活动的时间顺序，还受到**大脑或局部网络当前状态的控制**。这种大脑或局部网络的状态就是“状态门控”，状态的有无或方向影响着突触可塑性的方向。常见门控状态如下：

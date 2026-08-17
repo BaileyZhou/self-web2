@@ -10,6 +10,7 @@ import KnowledgeCard from '@/components/sections/KnowledgeCard'
 import Footer from '@/components/ui/Footer'
 import SearchInput from '@/components/ui/SearchInput'
 import Pagination from '@/components/ui/Pagination'
+import { useIsLg } from '@/lib/use-media-query'
 import type { KnowledgeItem } from '@/lib/knowledge-types'
 
 /** 每页最多展示条数 */
@@ -24,6 +25,8 @@ export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) 
   // 右侧预览浮窗：点击卡片选中（在所有条目中查找，筛选后仍保持显示）
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected = items.find((i) => i.id === selectedId) || null
+  // 桌面（lg+）有右侧浮窗：卡片点击=选中；平板/手机（<lg，浮窗隐藏）卡片点击=直接进详情页
+  const isLg = useIsLg()
 
   // 全部分类（保持出现顺序，用于筛选）
   const categories = useMemo(
@@ -153,7 +156,7 @@ export default function KnowledgeBrowser({ items }: { items: KnowledgeItem[] }) 
                       <KnowledgeCard
                         item={item}
                         detailLabel={DETAIL_LABEL}
-                        onSelect={setSelectedId}
+                        onSelect={isLg ? setSelectedId : undefined}
                         selected={selectedId === item.id}
                       />
                     </div>

@@ -10,6 +10,7 @@ import CodeFlowCard from '@/components/sections/CodeFlowCard'
 import Footer from '@/components/ui/Footer'
 import SearchInput from '@/components/ui/SearchInput'
 import Pagination from '@/components/ui/Pagination'
+import { useIsLg } from '@/lib/use-media-query'
 import type { CodeFlowItem } from '@/lib/code-examples-types'
 
 /** 每页最多展示条数（与知识库/论文库一致） */
@@ -23,6 +24,8 @@ export default function CodeExamplesLibrary({ items }: { items: CodeFlowItem[] }
   // 右侧预览浮窗：点击卡片选中（在所有条目中查找，筛选后仍保持显示）
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected = items.find((f) => f.id === selectedId) || null
+  // 桌面（lg+）有右侧浮窗：卡片点击=选中；平板/手机（<lg，浮窗隐藏）卡片直接点 GitHub 即可，无需选中
+  const isLg = useIsLg()
 
   // 关键字检索：标题 / 简介 / 标签 / 子模块名
   const filtered = useMemo(() => {
@@ -97,7 +100,7 @@ export default function CodeExamplesLibrary({ items }: { items: CodeFlowItem[] }
                       <CodeFlowCard
                         flow={f}
                         githubLabel={GITHUB_LABEL}
-                        onSelect={setSelectedId}
+                        onSelect={isLg ? setSelectedId : undefined}
                         selected={selectedId === f.id}
                       />
                     </div>

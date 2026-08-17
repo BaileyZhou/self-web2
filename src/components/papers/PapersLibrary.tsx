@@ -18,6 +18,8 @@ import {
 import Footer from '@/components/ui/Footer'
 import SearchInput from '@/components/ui/SearchInput'
 import Pagination from '@/components/ui/Pagination'
+import { useIsLg } from '@/lib/use-media-query'
+import { useRouter } from 'next/navigation'
 import type { PaperItem } from '@/lib/papers-types'
 
 /** 每页最多展示条数（与知识库/代码案例库一致） */
@@ -113,6 +115,10 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
   const [view, setView] = useState<'standard' | 'compact'>('standard')
   const [page, setPage] = useState(1)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  // 桌面（lg+）有右侧浮窗：卡片点击=选中；平板/手机（<lg，浮窗隐藏）卡片点击=直接进详情页
+  const isLg = useIsLg()
+  const router = useRouter()
+  const openPaper = (id: string) => (isLg ? setSelectedId(id) : router.push(`/papers/${id}`))
 
   // 课题列表（含各课题文献数；一篇文献可属于多个课题，会在每个课题里都计数）
   const topics = useMemo(() => {
@@ -437,7 +443,7 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setSelectedId(p.id)}
+                        onClick={() => openPaper(p.id)}
                         style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
                         className={`stagger-in text-left group relative card-hover-smooth h-full rounded-2xl p-5 border border-white/40 transition-all bg-white/25 backdrop-blur-md shadow-sm overflow-hidden ${
                           selectedId === p.id
@@ -480,7 +486,7 @@ export default function PapersLibrary({ items }: { items: PaperItem[] }) {
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => setSelectedId(p.id)}
+                        onClick={() => openPaper(p.id)}
                         style={{ animationDelay: `${Math.min(i * 70, 420)}ms` }}
                         className={`stagger-in w-full text-left flex items-center gap-4 px-5 py-3.5 transition-all hover:bg-rose-50/40 ${
                           selectedId === p.id ? 'bg-rose-50/60 ring-2 ring-inset ring-rose-200' : ''
